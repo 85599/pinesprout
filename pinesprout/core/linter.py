@@ -81,10 +81,29 @@ class LintResult(BaseModel):
 
 
 _IDENTIFIER_USE_RE = re.compile(r"\b([A-Za-z_][A-Za-z0-9_]*)\b")
-_BUILTIN_PREFIXES = ("ta.", "math.", "request.", "str.", "array.", "matrix.",
-                     "map.", "color.", "input.", "strategy.", "ticker.",
-                     "syminfo.", "chart.", "line.", "label.", "box.", "table.",
-                     "runtime.", "timeframe.", "session.", "log.")
+_BUILTIN_PREFIXES = (
+    "ta.",
+    "math.",
+    "request.",
+    "str.",
+    "array.",
+    "matrix.",
+    "map.",
+    "color.",
+    "input.",
+    "strategy.",
+    "ticker.",
+    "syminfo.",
+    "chart.",
+    "line.",
+    "label.",
+    "box.",
+    "table.",
+    "runtime.",
+    "timeframe.",
+    "session.",
+    "log.",
+)
 
 
 def _is_exported_or_special(name: str) -> bool:
@@ -137,10 +156,7 @@ class Linter:
         # that's already flagged separately as deprecated syntax, so it counts
         # as a valid declaration here to avoid a redundant/misleading error.
         if not has_decl:
-            has_decl = any(
-                re.match(r"^\s*study\s*\(", line)
-                for line in self.program.source_lines
-            )
+            has_decl = any(re.match(r"^\s*study\s*\(", line) for line in self.program.source_lines)
         if not has_decl:
             self.issues.append(
                 LintIssue(

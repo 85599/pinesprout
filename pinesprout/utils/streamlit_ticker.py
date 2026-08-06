@@ -60,6 +60,7 @@ class Quote:
     change_pct: float | None = None
     ok: bool = False
 
+
 DEFAULT_SYMBOLS = {
     "NIFTY 50": "^NSEI",
     "SENSEX": "^BSESN",
@@ -94,9 +95,7 @@ def _fetch_quotes(symbol_map: dict[str, str]) -> list[Quote]:
 
 
 @st.cache_data(ttl=REFRESH_SECONDS, show_spinner=False)
-def _cached_quotes(
-    symbol_map_items: tuple[tuple[str, str], ...], include_commodities: bool
-) -> list[Quote]:
+def _cached_quotes(symbol_map_items: tuple[tuple[str, str], ...], include_commodities: bool) -> list[Quote]:
     """Cached wrapper -- Streamlit reruns constantly (every widget
     interaction), so we cache the actual network calls for
     REFRESH_SECONDS and let the CSS animation handle the visual motion
@@ -111,8 +110,7 @@ def _quotes_to_html(quotes: list[Quote]) -> str:
     spans = []
     for q in quotes:
         if not q.ok or q.price is None:
-            spans.append(f'<span class="kj-tick-label">{q.label}</span> '
-                         f'<span class="kj-tick-na">N/A</span>')
+            spans.append(f'<span class="kj-tick-label">{q.label}</span> <span class="kj-tick-na">N/A</span>')
         else:
             price_str = f"{q.price:,.2f}"
             if q.change_pct is not None:
@@ -124,8 +122,9 @@ def _quotes_to_html(quotes: list[Quote]) -> str:
                     f'<span class="{cls}">{arrow}{abs(q.change_pct):.2f}%</span>'
                 )
             else:
-                spans.append(f'<span class="kj-tick-label">{q.label}</span> '
-                             f'<span class="kj-tick-price">{price_str}</span>')
+                spans.append(
+                    f'<span class="kj-tick-label">{q.label}</span> <span class="kj-tick-price">{price_str}</span>'
+                )
     return '<span class="kj-tick-sep">&nbsp;&nbsp;|&nbsp;&nbsp;</span>'.join(spans)
 
 
@@ -185,11 +184,13 @@ def render_ticker_banner(
     content_html = _quotes_to_html(quotes)
 
     if theme == "dark":
-        css = _TICKER_CSS_TEMPLATE.format(bg="#0E1117", border="#2A2F3A", text="#FAFAFA",
-                                            muted="#9AA4B2", duration=speed_seconds)
+        css = _TICKER_CSS_TEMPLATE.format(
+            bg="#0E1117", border="#2A2F3A", text="#FAFAFA", muted="#9AA4B2", duration=speed_seconds
+        )
     else:
-        css = _TICKER_CSS_TEMPLATE.format(bg="#F5F7FA", border="#E1E5EA", text="#1A1C1E",
-                                            muted="#5B6572", duration=speed_seconds)
+        css = _TICKER_CSS_TEMPLATE.format(
+            bg="#F5F7FA", border="#E1E5EA", text="#1A1C1E", muted="#5B6572", duration=speed_seconds
+        )
 
     html = f"""
     {css}

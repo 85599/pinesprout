@@ -17,9 +17,7 @@ def generate_report(source: str, file: str = "script.pine") -> str:
     optimization = optimize_source(source, file=file)
 
     script_type = (
-        "Strategy" if report.script_kind.is_strategy else
-        "Library" if report.script_kind.is_library else
-        "Indicator"
+        "Strategy" if report.script_kind.is_strategy else "Library" if report.script_kind.is_library else "Indicator"
     )
 
     env = build_env()

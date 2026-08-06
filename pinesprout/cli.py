@@ -64,7 +64,11 @@ def _version_callback(value: bool) -> None:
 @app.callback()
 def main(
     version: bool | None = typer.Option(
-        None, "--version", "-v", callback=_version_callback, is_eager=True,
+        None,
+        "--version",
+        "-v",
+        callback=_version_callback,
+        is_eager=True,
         help="Show the PineSprout version and exit.",
     ),
 ) -> None:
@@ -222,15 +226,22 @@ def analyze_cmd(
         print_json(report)
         return
 
-    kind = "Strategy" if report.script_kind.is_strategy else ("Library" if report.script_kind.is_library else "Indicator")
-    console.print(Panel.fit(
-        f"[bold]{report.script_kind.title or file.name}[/bold]\n"
-        f"Type: {kind}  ·  Pine v{report.pine_version}  ·  Complexity: {report.complexity_score}",
-        title="PineSprout Analysis",
-    ))
+    kind = (
+        "Strategy" if report.script_kind.is_strategy else ("Library" if report.script_kind.is_library else "Indicator")
+    )
+    console.print(
+        Panel.fit(
+            f"[bold]{report.script_kind.title or file.name}[/bold]\n"
+            f"Type: {kind}  ·  Pine v{report.pine_version}  ·  Complexity: {report.complexity_score}",
+            title="PineSprout Analysis",
+        )
+    )
 
     table = Table(show_header=False)
-    table.add_row("Lines (code / comment / blank)", f"{report.code_line_count} / {report.comment_line_count} / {report.blank_line_count}")
+    table.add_row(
+        "Lines (code / comment / blank)",
+        f"{report.code_line_count} / {report.comment_line_count} / {report.blank_line_count}",
+    )
     table.add_row("Variables", str(report.variable_count))
     table.add_row("Functions", str(report.function_count))
     table.add_row("Inputs", str(report.input_count))
@@ -269,11 +280,18 @@ def optimize(
         if not result.suggestions:
             console.print("[pf.success]No optimization suggestions — looks clean![/pf.success]")
         for s in result.suggestions:
-            console.print(Panel(
-                f"{s.detail}" + (f"\n\n[pf.muted]Before:[/pf.muted] {s.before}\n[pf.muted]After:[/pf.muted] {s.after}" if s.before else ""),
-                title=f"Line {s.line}: {s.title}",
-                border_style="magenta",
-            ))
+            console.print(
+                Panel(
+                    f"{s.detail}"
+                    + (
+                        f"\n\n[pf.muted]Before:[/pf.muted] {s.before}\n[pf.muted]After:[/pf.muted] {s.after}"
+                        if s.before
+                        else ""
+                    ),
+                    title=f"Line {s.line}: {s.title}",
+                    border_style="magenta",
+                )
+            )
 
     if apply and result.optimized_source:
         write_text(file, result.optimized_source)
@@ -354,11 +372,13 @@ def upgrade(
             console.print("[pf.muted]No automatic migrations were necessary.[/pf.muted]")
 
         if result.manual_review_needed:
-            console.print(Panel(
-                "\n".join(f"• {m}" for m in result.manual_review_needed),
-                title="Manual Review Recommended",
-                border_style="yellow",
-            ))
+            console.print(
+                Panel(
+                    "\n".join(f"• {m}" for m in result.manual_review_needed),
+                    title="Manual Review Recommended",
+                    border_style="yellow",
+                )
+            )
 
         console.print(Syntax(result.upgraded_source, "javascript", theme="ansi_dark", line_numbers=True))
 
@@ -395,8 +415,10 @@ def generate(
     else:
         console.print(Syntax(result.source, "javascript", theme="ansi_dark", line_numbers=True))
         if result.lint_issues:
-            console.print(f"[pf.warning]{len(result.lint_issues)} lint issue(s) found in generated code — "
-                          f"run `pinesprout lint` for details.[/pf.warning]")
+            console.print(
+                f"[pf.warning]{len(result.lint_issues)} lint issue(s) found in generated code — "
+                f"run `pinesprout lint` for details.[/pf.warning]"
+            )
 
     if output:
         write_text(output, result.source)
@@ -435,7 +457,9 @@ def template_new(
     try:
         template_kind = TemplateKind(kind)
     except ValueError:
-        error_console.print(f"[pf.error]Unknown template '{kind}'. Choices: {', '.join(available_templates())}[/pf.error]")
+        error_console.print(
+            f"[pf.error]Unknown template '{kind}'. Choices: {', '.join(available_templates())}[/pf.error]"
+        )
         raise typer.Exit(code=1) from None
 
     spec = TemplateSpec(kind=template_kind, title=title, overlay=overlay, pine_version=pine_version)

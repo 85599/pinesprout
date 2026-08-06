@@ -43,9 +43,7 @@ def _find_repeated_ta_calls(source: str) -> list[OptimizationSuggestion]:
     for expr, count in counts.items():
         fn = expr.split("(")[0]
         if count > 1 and fn in PERFORMANCE_SENSITIVE_FUNCTIONS:
-            first_line = next(
-                (i + 1 for i, ln in enumerate(source.splitlines()) if expr in ln), 1
-            )
+            first_line = next((i + 1 for i, ln in enumerate(source.splitlines()) if expr in ln), 1)
             var_name = fn.split(".")[-1] + "_cached"
             suggestions.append(
                 OptimizationSuggestion(

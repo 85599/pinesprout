@@ -25,9 +25,7 @@ def generate_docs(
     report = analyze(source, file=source_filename)
     summary = explain_script_summary(source)
     script_type = (
-        "Strategy" if report.script_kind.is_strategy else
-        "Library" if report.script_kind.is_library else
-        "Indicator"
+        "Strategy" if report.script_kind.is_strategy else "Library" if report.script_kind.is_library else "Indicator"
     )
 
     env = build_env(autoescape_html=(fmt == DocFormat.HTML))

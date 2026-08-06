@@ -17,10 +17,7 @@ def resolve_pine_files(target: Path, recursive: bool = True) -> list[Path]:
         return [target]
     if target.is_dir():
         pattern = "**/*" if recursive else "*"
-        files = [
-            p for p in target.glob(pattern)
-            if p.is_file() and is_pine_file(p)
-        ]
+        files = [p for p in target.glob(pattern) if p.is_file() and is_pine_file(p)]
         return sorted(files)
     return []
 

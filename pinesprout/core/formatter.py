@@ -30,9 +30,7 @@ _COMMA_RE = re.compile(r",(?!\s)")
 _MULTI_BLANK_RE = re.compile(r"\n{3,}")
 _TRAILING_WS_RE = re.compile(r"[ \t]+$", re.MULTILINE)
 _VERSION_RE = re.compile(r"^\s*//\s*@version\s*=\s*\d+\s*$")
-_OPERATOR_RE = re.compile(
-    r"(?<![=!<>:+\-*/])\s*(==|!=|<=|>=|:=|=>|[+\-*/%<>])\s*(?!=)"
-)
+_OPERATOR_RE = re.compile(r"(?<![=!<>:+\-*/])\s*(==|!=|<=|>=|:=|=>|[+\-*/%<>])\s*(?!=)")
 _INDENT_UNIT = "    "
 
 
@@ -60,11 +58,7 @@ def _space_bare_equals(content: str, start_depth: int = 0) -> tuple[str, int]:
             depth = max(0, depth - 1)
             out.append(ch)
             i += 1
-        elif (
-            ch == "="
-            and (i == 0 or content[i - 1] not in "=!<>:+-*/")
-            and (i + 1 >= n or content[i + 1] not in "=>")
-        ):
+        elif ch == "=" and (i == 0 or content[i - 1] not in "=!<>:+-*/") and (i + 1 >= n or content[i + 1] not in "=>"):
             while out and out[-1] == " ":
                 out.pop()
             out.append("=" if depth > 0 else " = ")
@@ -207,6 +201,7 @@ def format_source(source: str, options: FormatOptions | None = None) -> str:
             masked = re.sub(r"\s+,", ",", masked)
 
         if options.space_around_operators:
+
             def _op_sub(m: re.Match[str]) -> str:
                 return f" {m.group(1)} "
 

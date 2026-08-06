@@ -209,14 +209,17 @@ def test_theme_css_reflects_choice_in_same_pass():
     assert "#FFFFFF" in css_blocks[0]  # light background must be the value actually injected
 
 
-@pytest.mark.parametrize("mode", [
-    "✨ Describe my strategy (AI)",
-    "🧪 Template Builder (huge combo space)",
-    "📋 Use a template",
-    "📄 Paste / upload a script",
-    "📊 Live Market Heatmap",
-    "ℹ️ About",
-])
+@pytest.mark.parametrize(
+    "mode",
+    [
+        "✨ Describe my strategy (AI)",
+        "🧪 Template Builder (huge combo space)",
+        "📋 Use a template",
+        "📄 Paste / upload a script",
+        "📊 Live Market Heatmap",
+        "ℹ️ About",
+    ],
+)
 def test_sidebar_mode_selection_survives_theme_toggle(mode):
     """Regression test for a real bug caught via manual browser screenshots
     (not detectable by exception-only checks): theme_toggle() used to call

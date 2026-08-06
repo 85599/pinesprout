@@ -11,18 +11,12 @@ def test_lint_clean_script_has_no_errors(clean_v6_source):
 
 def test_lint_missing_version_pragma_is_error():
     result = lint_source('indicator("x")\nplot(close)\n')
-    assert any(
-        i.category == LintCategory.STRUCTURE and i.severity == Severity.ERROR
-        for i in result.issues
-    )
+    assert any(i.category == LintCategory.STRUCTURE and i.severity == Severity.ERROR for i in result.issues)
 
 
 def test_lint_missing_declaration_is_error():
     result = lint_source("//@version=6\nx = close\nplot(x)\n")
-    assert any(
-        "declaration" in i.message.lower() and i.severity == Severity.ERROR
-        for i in result.issues
-    )
+    assert any("declaration" in i.message.lower() and i.severity == Severity.ERROR for i in result.issues)
 
 
 def test_lint_detects_unused_variable():
@@ -77,18 +71,12 @@ def test_lint_no_repaint_warning_with_lookahead_off():
         's = request.security(syminfo.tickerid, "D", close, lookahead=barmerge.lookahead_off)\nplot(s)\n'
     )
     result = lint_source(source)
-    warnings = [
-        i for i in result.issues
-        if i.category == LintCategory.REPAINT_RISK and i.severity == Severity.WARNING
-    ]
+    warnings = [i for i in result.issues if i.category == LintCategory.REPAINT_RISK and i.severity == Severity.WARNING]
     assert len(warnings) == 0
 
 
 def test_lint_detects_performance_issue_in_loop():
-    source = (
-        '//@version=6\nindicator("x")\n'
-        "for i = 0 to 10\n    x = ta.sma(close, 14)\nplot(close)\n"
-    )
+    source = '//@version=6\nindicator("x")\nfor i = 0 to 10\n    x = ta.sma(close, 14)\nplot(close)\n'
     result = lint_source(source)
     perf_issues = [i for i in result.issues if i.category == LintCategory.PERFORMANCE]
     assert len(perf_issues) >= 1
@@ -103,13 +91,13 @@ def test_lint_line_length_style_warning():
 
 
 def test_lint_result_counts_by_severity():
-    source = 'x = close\nplot(x)\n'  # missing version + missing declaration = 2 errors
+    source = "x = close\nplot(x)\n"  # missing version + missing declaration = 2 errors
     result = lint_source(source)
     assert result.error_count >= 2
     assert result.passed is False
 
 
 def test_lint_issues_sorted_by_line():
-    result = lint_source('x=close\nplot(x)\n')
+    result = lint_source("x=close\nplot(x)\n")
     lines = [i.line for i in result.issues]
     assert lines == sorted(lines)

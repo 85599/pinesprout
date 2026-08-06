@@ -74,11 +74,7 @@ def test_format_preserves_arrow_operator():
 
 
 def test_format_keeps_keyword_args_tight_across_multiline_call():
-    source = (
-        '//@version=6\nindicator("x")\n'
-        'plot(close, title="Close",\n'
-        '     linewidth=2, color=color.blue)\n'
-    )
+    source = '//@version=6\nindicator("x")\nplot(close, title="Close",\n     linewidth=2, color=color.blue)\n'
     formatted = format_source(source)
     assert "linewidth=2" in formatted
     assert "linewidth = 2" not in formatted

@@ -50,12 +50,14 @@ import yfinance as yf
 
 try:
     import plotly.express as px
+
     PLOTLY_AVAILABLE = True
 except ImportError:  # pragma: no cover - exercised only when plotly is absent
     PLOTLY_AVAILABLE = False
 
 try:
     from streamlit_autorefresh import st_autorefresh
+
     AUTOREFRESH_AVAILABLE = True
 except ImportError:  # pragma: no cover - exercised only when the package is absent
     AUTOREFRESH_AVAILABLE = False
@@ -201,8 +203,7 @@ def _render_overview(quotes: list[IndexQuote], key_prefix: str) -> None:
     c4.metric("📊 Total tracked", len(quotes))
 
     if not PLOTLY_AVAILABLE:
-        st.info("Install `plotly` for charts here (`pip install plotly`). "
-                 "Tables and tiles below work either way.")
+        st.info("Install `plotly` for charts here (`pip install plotly`). Tables and tiles below work either way.")
     elif ok_quotes:
         col_chart1, col_chart2 = st.columns(2)
         with col_chart1:
@@ -216,8 +217,7 @@ def _render_overview(quotes: list[IndexQuote], key_prefix: str) -> None:
                 labels={"x": "", "y": "% change"},
                 title="% Change by Index",
             )
-            fig.update_layout(xaxis_tickangle=45, showlegend=False, coloraxis_showscale=False,
-                               margin=dict(t=40, b=0))
+            fig.update_layout(xaxis_tickangle=45, showlegend=False, coloraxis_showscale=False, margin=dict(t=40, b=0))
             st.plotly_chart(fig, width="stretch", key=f"{key_prefix}_bar")
         with col_chart2:
             sentiment_df = {
@@ -225,7 +225,10 @@ def _render_overview(quotes: list[IndexQuote], key_prefix: str) -> None:
                 "Count": [up_count, down_count, na_count],
             }
             fig2 = px.pie(
-                sentiment_df, values="Count", names="Sentiment", title="Market Sentiment",
+                sentiment_df,
+                values="Count",
+                names="Sentiment",
+                title="Market Sentiment",
                 color="Sentiment",
                 color_discrete_map={"Advancing": "#178A4C", "Declining": "#C6303E", "No data": "#9AA4B2"},
             )
@@ -257,9 +260,11 @@ def _render_overview(quotes: list[IndexQuote], key_prefix: str) -> None:
         st.dataframe(df, width="stretch", hide_index=True)
         csv = df.to_csv(index=False)
         st.download_button(
-            "📥 Download as CSV", data=csv,
+            "📥 Download as CSV",
+            data=csv,
             file_name=f"nse_index_watch_{datetime.now(UTC).strftime('%Y%m%d_%H%M')}.csv",
-            mime="text/csv", key=f"{key_prefix}_csv",
+            mime="text/csv",
+            key=f"{key_prefix}_csv",
         )
     except ImportError:  # pragma: no cover - pandas ships with streamlit's own deps
         st.table(rows)
@@ -324,7 +329,7 @@ def render_index_watch(theme: str = "dark", key_prefix: str = "idx_watch") -> No
 
             cols_per_row = 4
             for row_start in range(0, len(quotes), cols_per_row):
-                row = quotes[row_start:row_start + cols_per_row]
+                row = quotes[row_start : row_start + cols_per_row]
                 cols = st.columns(cols_per_row)
                 for col, q in zip(cols, row, strict=False):
                     with col:

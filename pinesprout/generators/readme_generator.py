@@ -32,9 +32,7 @@ def generate_readme(
     summary = explain_script_summary(source)
 
     script_type = (
-        "Strategy" if report.script_kind.is_strategy else
-        "Library" if report.script_kind.is_library else
-        "Indicator"
+        "Strategy" if report.script_kind.is_strategy else "Library" if report.script_kind.is_library else "Indicator"
     )
 
     env = build_env()

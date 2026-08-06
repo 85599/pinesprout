@@ -11,11 +11,7 @@ class _DummyRule(LintRule):
     name = "dummy-rule"
 
     def check(self, source: str) -> list[LintIssue]:
-        return [
-            LintIssue(
-                line=1, severity=Severity.INFO, category=LintCategory.STYLE, message="dummy"
-            )
-        ]
+        return [LintIssue(line=1, severity=Severity.INFO, category=LintCategory.STYLE, message="dummy")]
 
 
 class _DummyPlugin(PineSproutPlugin):

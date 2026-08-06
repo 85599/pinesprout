@@ -111,11 +111,10 @@ def render_about_section() -> None:
     for col, (label, url, kind) in zip(cols, LINKS, strict=False):
         col.link_button(label, url, width="stretch", type=kind)
 
-    st.markdown('<p class="section-header" style="margin-top:1.6rem;">🧰 What\'s inside</p>',
-                unsafe_allow_html=True)
+    st.markdown('<p class="section-header" style="margin-top:1.6rem;">🧰 What\'s inside</p>', unsafe_allow_html=True)
 
     for row_start in range(0, len(FEATURE_CARDS), 4):
-        row = FEATURE_CARDS[row_start:row_start + 4]
+        row = FEATURE_CARDS[row_start : row_start + 4]
         cols = st.columns(4)
         for col, (icon, title, desc) in zip(cols, row, strict=False):
             with col:

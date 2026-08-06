@@ -21,9 +21,7 @@ _VERSION_RE = re.compile(r"//\s*@version\s*=\s*(\d+)")
 _DECL_RE = re.compile(r"^(indicator|strategy|library|study)\s*\(")
 _VAR_DECL_RE = re.compile(r"^(var\s+|varip\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=(?!=)\s*(.+)$")
 _VAR_REASSIGN_RE = re.compile(r"^([A-Za-z_][A-Za-z0-9_.\[\]]*)\s*:=\s*(.+)$")
-_FUNC_DECL_RE = re.compile(
-    r"^(?:export\s+)?(?:method\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*\(([^)]*)\)\s*=>\s*(.*)$"
-)
+_FUNC_DECL_RE = re.compile(r"^(?:export\s+)?(?:method\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*\(([^)]*)\)\s*=>\s*(.*)$")
 _IF_RE = re.compile(r"^if\s+(.+)$")
 _FOR_RE = re.compile(r"^for\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+?)\s+to\s+(.+)$")
 _WHILE_RE = re.compile(r"^while\s+(.+)$")
@@ -152,8 +150,7 @@ def parse(source: str) -> ParsedProgram:
                 "strategy": NodeKind.STRATEGY_DECL,
                 "library": NodeKind.LIBRARY_DECL,
             }[m.group(1)]
-            node = Node(kind, stripped, pos, pos,
-                        meta={"call": code_part, "legacy": m.group(1) == "study"})
+            node = Node(kind, stripped, pos, pos, meta={"call": code_part, "legacy": m.group(1) == "study"})
             declarations.append(node)
 
         elif m := _IMPORT_RE.match(code_part):
@@ -175,22 +172,24 @@ def parse(source: str) -> ParsedProgram:
             declarations.append(node)
 
         elif m := _IF_RE.match(code_part):
-            node = Node(NodeKind.IF_STATEMENT, stripped, pos, pos,
-                         meta={"condition": m.group(1), "indent": indent})
+            node = Node(NodeKind.IF_STATEMENT, stripped, pos, pos, meta={"condition": m.group(1), "indent": indent})
 
         elif m := _FOR_RE.match(code_part):
             node = Node(
-                NodeKind.FOR_STATEMENT, stripped, pos, pos,
+                NodeKind.FOR_STATEMENT,
+                stripped,
+                pos,
+                pos,
                 meta={"var": m.group(1), "from": m.group(2), "to": m.group(3), "indent": indent},
             )
 
         elif m := _WHILE_RE.match(code_part):
-            node = Node(NodeKind.WHILE_STATEMENT, stripped, pos, pos,
-                         meta={"condition": m.group(1), "indent": indent})
+            node = Node(NodeKind.WHILE_STATEMENT, stripped, pos, pos, meta={"condition": m.group(1), "indent": indent})
 
         elif m := _SWITCH_RE.match(code_part):
-            node = Node(NodeKind.SWITCH_STATEMENT, stripped, pos, pos,
-                         meta={"subject": m.group(1).strip(), "indent": indent})
+            node = Node(
+                NodeKind.SWITCH_STATEMENT, stripped, pos, pos, meta={"subject": m.group(1).strip(), "indent": indent}
+            )
 
         elif _PLOT_CALL_RE.match(code_part):
             node = Node(NodeKind.PLOT_STATEMENT, stripped, pos, pos)
@@ -202,7 +201,10 @@ def parse(source: str) -> ParsedProgram:
 
         elif m := _VAR_REASSIGN_RE.match(code_part):
             node = Node(
-                NodeKind.VARIABLE_REASSIGN, stripped, pos, pos,
+                NodeKind.VARIABLE_REASSIGN,
+                stripped,
+                pos,
+                pos,
                 meta={"name": m.group(1), "value": m.group(2), "indent": indent},
             )
             variable_assignments.append(node)
@@ -210,7 +212,10 @@ def parse(source: str) -> ParsedProgram:
         elif m := _VAR_DECL_RE.match(code_part):
             is_var = bool(m.group(1))
             node = Node(
-                NodeKind.VARIABLE_DECL, stripped, pos, pos,
+                NodeKind.VARIABLE_DECL,
+                stripped,
+                pos,
+                pos,
                 meta={
                     "name": m.group(2),
                     "value": m.group(3),
@@ -224,8 +229,7 @@ def parse(source: str) -> ParsedProgram:
         else:
             node = Node(NodeKind.EXPRESSION_STATEMENT, stripped, pos, pos, meta={"indent": indent})
             if call_match := _CALL_RE.match(code_part):
-                fn_node = Node(NodeKind.FUNCTION_CALL, stripped, pos, pos,
-                                meta={"name": call_match.group(1)})
+                fn_node = Node(NodeKind.FUNCTION_CALL, stripped, pos, pos, meta={"name": call_match.group(1)})
                 function_calls.append(fn_node)
 
         if node is not None:

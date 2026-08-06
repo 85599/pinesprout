@@ -179,9 +179,7 @@ def render_heatmap_tab(theme: str = "dark", key_prefix: str = "kj_heatmap") -> N
             region = st.selectbox("Region", list(EXCHANGES_BY_REGION.keys()), key=f"{key_prefix}_region")
         with col_pick:
             options = list(EXCHANGES_BY_REGION[region].keys())
-            picked = st.multiselect(
-                "Exchange(s)", options, default=options[:1], key=f"{key_prefix}_exchanges_{region}"
-            )
+            picked = st.multiselect("Exchange(s)", options, default=options[:1], key=f"{key_prefix}_exchanges_{region}")
             exchange_codes = [EXCHANGES_BY_REGION[region][p] for p in picked]
         if not exchange_codes:
             st.warning("Pick at least one exchange, or switch to a preset index.")
@@ -191,8 +189,8 @@ def render_heatmap_tab(theme: str = "dark", key_prefix: str = "kj_heatmap") -> N
             "Custom dataSource value",
             value="SPX500",
             help="Exact TradingView dataSource string for an index not listed above. "
-                 "Look this up via the live configurator on TradingView's widget-docs page: "
-                 "https://www.tradingview.com/widget-docs/widgets/heatmaps/stock-heatmap/",
+            "Look this up via the live configurator on TradingView's widget-docs page: "
+            "https://www.tradingview.com/widget-docs/widgets/heatmaps/stock-heatmap/",
             key=f"{key_prefix}_custom_source",
         )
 
@@ -210,8 +208,9 @@ def render_heatmap_tab(theme: str = "dark", key_prefix: str = "kj_heatmap") -> N
     with col6:
         zoom_enabled = st.checkbox("Allow zoom", value=True, key=f"{key_prefix}_zoom")
     with col7:
-        height = st.slider("Widget height (px)", min_value=500, max_value=1800, value=1000, step=50,
-                            key=f"{key_prefix}_height")
+        height = st.slider(
+            "Widget height (px)", min_value=500, max_value=1800, value=1000, step=50, key=f"{key_prefix}_height"
+        )
 
     if market_mode == MODE_EXCHANGES and not exchange_codes:
         st.info("Select an exchange above to load the heatmap.")

@@ -4,10 +4,7 @@ from pinesprout.core.optimizer import optimize_source
 
 
 def test_optimize_detects_repeated_ta_calls():
-    source = (
-        '//@version=6\nindicator("x")\n'
-        "a = ta.rsi(close, 14) + 1\nb = ta.rsi(close, 14) - 1\nplot(a)\nplot(b)\n"
-    )
+    source = '//@version=6\nindicator("x")\na = ta.rsi(close, 14) + 1\nb = ta.rsi(close, 14) - 1\nplot(a)\nplot(b)\n'
     result = optimize_source(source)
     assert any("ta.rsi" in s.title for s in result.suggestions)
 
@@ -38,9 +35,6 @@ def test_optimize_apply_fixes_removes_redundant_true():
 
 
 def test_optimize_surfaces_loop_performance_issue():
-    source = (
-        '//@version=6\nindicator("x")\n'
-        "for i = 0 to 5\n    v = ta.ema(close, 10)\nplot(close)\n"
-    )
+    source = '//@version=6\nindicator("x")\nfor i = 0 to 5\n    v = ta.ema(close, 10)\nplot(close)\n'
     result = optimize_source(source)
     assert any("performance" in s.title.lower() or "loop" in s.title.lower() for s in result.suggestions)

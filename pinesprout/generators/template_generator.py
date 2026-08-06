@@ -94,10 +94,16 @@ _PRESETS: dict[TemplateKind, dict[str, object]] = {
             PlotSpec(expr="osLevel", title="Oversold", color="color.green"),
         ],
         "alerts": [
-            AlertSpec(condition="ta.crossover(rsiValue, obLevel)", title="RSI Overbought",
-                      message="RSI crossed above overbought level"),
-            AlertSpec(condition="ta.crossunder(rsiValue, osLevel)", title="RSI Oversold",
-                      message="RSI crossed below oversold level"),
+            AlertSpec(
+                condition="ta.crossover(rsiValue, obLevel)",
+                title="RSI Overbought",
+                message="RSI crossed above overbought level",
+            ),
+            AlertSpec(
+                condition="ta.crossunder(rsiValue, osLevel)",
+                title="RSI Oversold",
+                message="RSI crossed below oversold level",
+            ),
         ],
     },
     TemplateKind.BLANK_INDICATOR: {

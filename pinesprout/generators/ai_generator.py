@@ -83,9 +83,7 @@ def generate_pine_script(request: GenerationRequest, api_key: str | None = None)
         )
 
     user_message = (
-        f"Script type: {request.script_type}\n"
-        f"Target Pine version: {request.pine_version}\n"
-        f"Request: {request.prompt}\n"
+        f"Script type: {request.script_type}\nTarget Pine version: {request.pine_version}\nRequest: {request.prompt}\n"
     )
 
     payload = {

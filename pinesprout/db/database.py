@@ -80,8 +80,7 @@ class Database:
     ) -> int:
         with self._connect() as conn:
             cur = conn.execute(
-                "INSERT INTO runs (command, target, created_at, summary, details_json) "
-                "VALUES (?, ?, ?, ?, ?)",
+                "INSERT INTO runs (command, target, created_at, summary, details_json) VALUES (?, ?, ?, ?, ?)",
                 (
                     command,
                     target,
@@ -100,9 +99,7 @@ class Database:
                     (command, limit),
                 ).fetchall()
             else:
-                rows = conn.execute(
-                    "SELECT * FROM runs ORDER BY id DESC LIMIT ?", (limit,)
-                ).fetchall()
+                rows = conn.execute("SELECT * FROM runs ORDER BY id DESC LIMIT ?", (limit,)).fetchall()
 
         return [
             RunRecord(

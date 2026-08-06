@@ -108,12 +108,12 @@ def explain_script_summary(source: str) -> str:
     from pinesprout.core.analyzer import analyze  # local import to avoid cycle
 
     report = analyze(source)
-    kind = "strategy" if report.script_kind.is_strategy else (
-        "library" if report.script_kind.is_library else "indicator"
+    kind = (
+        "strategy" if report.script_kind.is_strategy else ("library" if report.script_kind.is_library else "indicator")
     )
     title = report.script_kind.title or "Untitled"
     pieces = [
-        f"This is a Pine Script v{program.pine_version or '?'} {kind} titled \"{title}\".",
+        f'This is a Pine Script v{program.pine_version or "?"} {kind} titled "{title}".',
         f"It defines {report.variable_count} variable(s) and {report.function_count} function(s),",
         f"reads {report.input_count} user input(s), and produces {report.plot_count} plot(s).",
     ]

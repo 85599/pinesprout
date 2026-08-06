@@ -119,15 +119,11 @@ def analyze(source: str, file: str = "<memory>") -> AnalysisReport:
     branching = len(re.findall(r"^\s*if\b", source, re.MULTILINE))
     loops = len(re.findall(r"^\s*(for|while)\b", source, re.MULTILINE))
     complexity_score = round(
-        1.0
-        + 0.15 * branching
-        + 0.25 * loops
-        + 0.05 * len(code_lines) / max(1, 10)
-        + 0.3 * max_depth,
+        1.0 + 0.15 * branching + 0.25 * loops + 0.05 * len(code_lines) / max(1, 10) + 0.3 * max_depth,
         2,
     )
 
-    libraries = re.findall(r'import\s+([A-Za-z0-9_/]+)', source)
+    libraries = re.findall(r"import\s+([A-Za-z0-9_/]+)", source)
 
     warnings: list[str] = []
     if not kind.is_indicator and not kind.is_strategy and not kind.is_library:

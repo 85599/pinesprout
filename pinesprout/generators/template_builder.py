@@ -46,168 +46,303 @@ class IndicatorSpec:
 
 INDICATORS: dict[str, IndicatorSpec] = {
     "sma": IndicatorSpec(
-        id="sma", label="SMA (Simple Moving Average)", category=IndicatorCategory.TREND,
-        calc_lines=["{var} = ta.sma(close, {length})"], value_var="maLine",
-        is_overlay_friendly=True, default_length=20,
+        id="sma",
+        label="SMA (Simple Moving Average)",
+        category=IndicatorCategory.TREND,
+        calc_lines=["{var} = ta.sma(close, {length})"],
+        value_var="maLine",
+        is_overlay_friendly=True,
+        default_length=20,
     ),
     "ema": IndicatorSpec(
-        id="ema", label="EMA (Exponential Moving Average)", category=IndicatorCategory.TREND,
-        calc_lines=["{var} = ta.ema(close, {length})"], value_var="maLine",
-        is_overlay_friendly=True, default_length=20,
+        id="ema",
+        label="EMA (Exponential Moving Average)",
+        category=IndicatorCategory.TREND,
+        calc_lines=["{var} = ta.ema(close, {length})"],
+        value_var="maLine",
+        is_overlay_friendly=True,
+        default_length=20,
     ),
     "wma": IndicatorSpec(
-        id="wma", label="WMA (Weighted Moving Average)", category=IndicatorCategory.TREND,
-        calc_lines=["{var} = ta.wma(close, {length})"], value_var="maLine",
-        is_overlay_friendly=True, default_length=20,
+        id="wma",
+        label="WMA (Weighted Moving Average)",
+        category=IndicatorCategory.TREND,
+        calc_lines=["{var} = ta.wma(close, {length})"],
+        value_var="maLine",
+        is_overlay_friendly=True,
+        default_length=20,
     ),
     "vwma": IndicatorSpec(
-        id="vwma", label="VWMA (Volume-Weighted MA)", category=IndicatorCategory.TREND,
-        calc_lines=["{var} = ta.vwma(close, {length})"], value_var="maLine",
-        is_overlay_friendly=True, default_length=20,
+        id="vwma",
+        label="VWMA (Volume-Weighted MA)",
+        category=IndicatorCategory.TREND,
+        calc_lines=["{var} = ta.vwma(close, {length})"],
+        value_var="maLine",
+        is_overlay_friendly=True,
+        default_length=20,
     ),
     "hma": IndicatorSpec(
-        id="hma", label="Hull Moving Average", category=IndicatorCategory.TREND,
-        calc_lines=["{var} = ta.hma(close, {length})"], value_var="maLine",
-        is_overlay_friendly=True, default_length=20,
+        id="hma",
+        label="Hull Moving Average",
+        category=IndicatorCategory.TREND,
+        calc_lines=["{var} = ta.hma(close, {length})"],
+        value_var="maLine",
+        is_overlay_friendly=True,
+        default_length=20,
     ),
     "supertrend": IndicatorSpec(
-        id="supertrend", label="SuperTrend", category=IndicatorCategory.TREND,
+        id="supertrend",
+        label="SuperTrend",
+        category=IndicatorCategory.TREND,
         calc_lines=[
             "[{var}, stDirection] = ta.supertrend({mult}, {length})",
-        ], value_var="stLine",
-        is_overlay_friendly=True, default_length=10,
+        ],
+        value_var="stLine",
+        is_overlay_friendly=True,
+        default_length=10,
     ),
     "psar": IndicatorSpec(
-        id="psar", label="Parabolic SAR", category=IndicatorCategory.TREND,
-        calc_lines=["{var} = ta.sar(0.02, 0.02, 0.2)"], value_var="sarLine",
-        is_overlay_friendly=True, default_length=14,
+        id="psar",
+        label="Parabolic SAR",
+        category=IndicatorCategory.TREND,
+        calc_lines=["{var} = ta.sar(0.02, 0.02, 0.2)"],
+        value_var="sarLine",
+        is_overlay_friendly=True,
+        default_length=14,
     ),
     "adx": IndicatorSpec(
-        id="adx", label="ADX (Trend Strength)", category=IndicatorCategory.TREND,
+        id="adx",
+        label="ADX (Trend Strength)",
+        category=IndicatorCategory.TREND,
         calc_lines=[
             "[diPlus, diMinus, {var}] = ta.dmi({length}, {length})",
-        ], value_var="adxLine",
-        is_overlay_friendly=False, default_length=14, supports_threshold=True,
-        default_overbought=25.0, default_oversold=15.0,
+        ],
+        value_var="adxLine",
+        is_overlay_friendly=False,
+        default_length=14,
+        supports_threshold=True,
+        default_overbought=25.0,
+        default_oversold=15.0,
     ),
     "rsi": IndicatorSpec(
-        id="rsi", label="RSI (Relative Strength Index)", category=IndicatorCategory.MOMENTUM,
-        calc_lines=["{var} = ta.rsi(close, {length})"], value_var="oscValue",
-        is_overlay_friendly=False, default_length=14, supports_threshold=True,
-        default_overbought=70.0, default_oversold=30.0,
+        id="rsi",
+        label="RSI (Relative Strength Index)",
+        category=IndicatorCategory.MOMENTUM,
+        calc_lines=["{var} = ta.rsi(close, {length})"],
+        value_var="oscValue",
+        is_overlay_friendly=False,
+        default_length=14,
+        supports_threshold=True,
+        default_overbought=70.0,
+        default_oversold=30.0,
     ),
     "stoch": IndicatorSpec(
-        id="stoch", label="Stochastic %K", category=IndicatorCategory.MOMENTUM,
-        calc_lines=["{var} = ta.stoch(close, high, low, {length})"], value_var="oscValue",
-        is_overlay_friendly=False, default_length=14, supports_threshold=True,
-        default_overbought=80.0, default_oversold=20.0,
+        id="stoch",
+        label="Stochastic %K",
+        category=IndicatorCategory.MOMENTUM,
+        calc_lines=["{var} = ta.stoch(close, high, low, {length})"],
+        value_var="oscValue",
+        is_overlay_friendly=False,
+        default_length=14,
+        supports_threshold=True,
+        default_overbought=80.0,
+        default_oversold=20.0,
     ),
     "cci": IndicatorSpec(
-        id="cci", label="CCI (Commodity Channel Index)", category=IndicatorCategory.MOMENTUM,
-        calc_lines=["{var} = ta.cci(close, {length})"], value_var="oscValue",
-        is_overlay_friendly=False, default_length=20, supports_threshold=True,
-        default_overbought=100.0, default_oversold=-100.0,
+        id="cci",
+        label="CCI (Commodity Channel Index)",
+        category=IndicatorCategory.MOMENTUM,
+        calc_lines=["{var} = ta.cci(close, {length})"],
+        value_var="oscValue",
+        is_overlay_friendly=False,
+        default_length=20,
+        supports_threshold=True,
+        default_overbought=100.0,
+        default_oversold=-100.0,
     ),
     "willr": IndicatorSpec(
-        id="willr", label="Williams %R", category=IndicatorCategory.MOMENTUM,
-        calc_lines=["{var} = ta.wpr({length})"], value_var="oscValue",
-        is_overlay_friendly=False, default_length=14, supports_threshold=True,
-        default_overbought=-20.0, default_oversold=-80.0,
+        id="willr",
+        label="Williams %R",
+        category=IndicatorCategory.MOMENTUM,
+        calc_lines=["{var} = ta.wpr({length})"],
+        value_var="oscValue",
+        is_overlay_friendly=False,
+        default_length=14,
+        supports_threshold=True,
+        default_overbought=-20.0,
+        default_oversold=-80.0,
     ),
     "roc": IndicatorSpec(
-        id="roc", label="ROC (Rate of Change)", category=IndicatorCategory.MOMENTUM,
-        calc_lines=["{var} = ta.roc(close, {length})"], value_var="oscValue",
-        is_overlay_friendly=False, default_length=12, supports_threshold=True,
-        default_overbought=5.0, default_oversold=-5.0,
+        id="roc",
+        label="ROC (Rate of Change)",
+        category=IndicatorCategory.MOMENTUM,
+        calc_lines=["{var} = ta.roc(close, {length})"],
+        value_var="oscValue",
+        is_overlay_friendly=False,
+        default_length=12,
+        supports_threshold=True,
+        default_overbought=5.0,
+        default_oversold=-5.0,
     ),
     "mom": IndicatorSpec(
-        id="mom", label="Momentum", category=IndicatorCategory.MOMENTUM,
-        calc_lines=["{var} = ta.mom(close, {length})"], value_var="oscValue",
-        is_overlay_friendly=False, default_length=10, supports_threshold=True,
-        default_overbought=0.0, default_oversold=0.0,
+        id="mom",
+        label="Momentum",
+        category=IndicatorCategory.MOMENTUM,
+        calc_lines=["{var} = ta.mom(close, {length})"],
+        value_var="oscValue",
+        is_overlay_friendly=False,
+        default_length=10,
+        supports_threshold=True,
+        default_overbought=0.0,
+        default_oversold=0.0,
     ),
     "ao": IndicatorSpec(
-        id="ao", label="Awesome Oscillator", category=IndicatorCategory.MOMENTUM,
-        calc_lines=["{var} = ta.sma(hl2, 5) - ta.sma(hl2, 34)"], value_var="oscValue",
-        is_overlay_friendly=False, default_length=5, supports_threshold=True,
-        default_overbought=0.0, default_oversold=0.0,
+        id="ao",
+        label="Awesome Oscillator",
+        category=IndicatorCategory.MOMENTUM,
+        calc_lines=["{var} = ta.sma(hl2, 5) - ta.sma(hl2, 34)"],
+        value_var="oscValue",
+        is_overlay_friendly=False,
+        default_length=5,
+        supports_threshold=True,
+        default_overbought=0.0,
+        default_oversold=0.0,
     ),
     "macd": IndicatorSpec(
-        id="macd", label="MACD Line", category=IndicatorCategory.MOMENTUM,
+        id="macd",
+        label="MACD Line",
+        category=IndicatorCategory.MOMENTUM,
         calc_lines=["[{var}, macdSignalLine, macdHist] = ta.macd(close, 12, 26, 9)"],
-        value_var="oscValue", is_overlay_friendly=False, default_length=12,
-        supports_threshold=True, default_overbought=0.0, default_oversold=0.0,
+        value_var="oscValue",
+        is_overlay_friendly=False,
+        default_length=12,
+        supports_threshold=True,
+        default_overbought=0.0,
+        default_oversold=0.0,
     ),
     "bb": IndicatorSpec(
-        id="bb", label="Bollinger Bands", category=IndicatorCategory.VOLATILITY,
+        id="bb",
+        label="Bollinger Bands",
+        category=IndicatorCategory.VOLATILITY,
         calc_lines=[
             "bbBasis = ta.sma(close, {length})",
             "bbDev = {mult} * ta.stdev(close, {length})",
             "{var}Upper = bbBasis + bbDev",
             "{var}Lower = bbBasis - bbDev",
-        ], value_var="band", is_overlay_friendly=True, default_length=20, is_band=True,
+        ],
+        value_var="band",
+        is_overlay_friendly=True,
+        default_length=20,
+        is_band=True,
     ),
     "keltner": IndicatorSpec(
-        id="keltner", label="Keltner Channel", category=IndicatorCategory.VOLATILITY,
+        id="keltner",
+        label="Keltner Channel",
+        category=IndicatorCategory.VOLATILITY,
         calc_lines=[
             "kcBasis = ta.ema(close, {length})",
             "kcRange = ta.atr({length}) * {mult}",
             "{var}Upper = kcBasis + kcRange",
             "{var}Lower = kcBasis - kcRange",
-        ], value_var="band", is_overlay_friendly=True, default_length=20, is_band=True,
+        ],
+        value_var="band",
+        is_overlay_friendly=True,
+        default_length=20,
+        is_band=True,
     ),
     "donchian": IndicatorSpec(
-        id="donchian", label="Donchian Channel", category=IndicatorCategory.VOLATILITY,
+        id="donchian",
+        label="Donchian Channel",
+        category=IndicatorCategory.VOLATILITY,
         calc_lines=[
             "{var}Upper = ta.highest(high, {length})",
             "{var}Lower = ta.lowest(low, {length})",
-        ], value_var="band", is_overlay_friendly=True, default_length=20, is_band=True,
+        ],
+        value_var="band",
+        is_overlay_friendly=True,
+        default_length=20,
+        is_band=True,
     ),
     "atr": IndicatorSpec(
-        id="atr", label="ATR (Average True Range)", category=IndicatorCategory.VOLATILITY,
-        calc_lines=["{var} = ta.atr({length})"], value_var="oscValue",
-        is_overlay_friendly=False, default_length=14, supports_threshold=True,
-        default_overbought=1.5, default_oversold=0.5,
+        id="atr",
+        label="ATR (Average True Range)",
+        category=IndicatorCategory.VOLATILITY,
+        calc_lines=["{var} = ta.atr({length})"],
+        value_var="oscValue",
+        is_overlay_friendly=False,
+        default_length=14,
+        supports_threshold=True,
+        default_overbought=1.5,
+        default_oversold=0.5,
     ),
     "stdev": IndicatorSpec(
-        id="stdev", label="Standard Deviation", category=IndicatorCategory.VOLATILITY,
-        calc_lines=["{var} = ta.stdev(close, {length})"], value_var="oscValue",
-        is_overlay_friendly=False, default_length=20, supports_threshold=True,
-        default_overbought=1.0, default_oversold=0.2,
+        id="stdev",
+        label="Standard Deviation",
+        category=IndicatorCategory.VOLATILITY,
+        calc_lines=["{var} = ta.stdev(close, {length})"],
+        value_var="oscValue",
+        is_overlay_friendly=False,
+        default_length=20,
+        supports_threshold=True,
+        default_overbought=1.0,
+        default_oversold=0.2,
     ),
     "obv": IndicatorSpec(
-        id="obv", label="OBV (On-Balance Volume)", category=IndicatorCategory.VOLUME,
-        calc_lines=["{var} = ta.obv"], value_var="oscValue",
-        is_overlay_friendly=False, default_length=14, supports_threshold=True,
-        default_overbought=0.0, default_oversold=0.0,
+        id="obv",
+        label="OBV (On-Balance Volume)",
+        category=IndicatorCategory.VOLUME,
+        calc_lines=["{var} = ta.obv"],
+        value_var="oscValue",
+        is_overlay_friendly=False,
+        default_length=14,
+        supports_threshold=True,
+        default_overbought=0.0,
+        default_oversold=0.0,
     ),
     "vwap": IndicatorSpec(
-        id="vwap", label="VWAP", category=IndicatorCategory.VOLUME,
-        calc_lines=["{var} = ta.vwap(hlc3)"], value_var="maLine",
-        is_overlay_friendly=True, default_length=1,
+        id="vwap",
+        label="VWAP",
+        category=IndicatorCategory.VOLUME,
+        calc_lines=["{var} = ta.vwap(hlc3)"],
+        value_var="maLine",
+        is_overlay_friendly=True,
+        default_length=1,
     ),
     "mfi": IndicatorSpec(
-        id="mfi", label="MFI (Money Flow Index)", category=IndicatorCategory.VOLUME,
-        calc_lines=["{var} = ta.mfi(hlc3, {length})"], value_var="oscValue",
-        is_overlay_friendly=False, default_length=14, supports_threshold=True,
-        default_overbought=80.0, default_oversold=20.0,
+        id="mfi",
+        label="MFI (Money Flow Index)",
+        category=IndicatorCategory.VOLUME,
+        calc_lines=["{var} = ta.mfi(hlc3, {length})"],
+        value_var="oscValue",
+        is_overlay_friendly=False,
+        default_length=14,
+        supports_threshold=True,
+        default_overbought=80.0,
+        default_oversold=20.0,
     ),
     "cmf": IndicatorSpec(
-        id="cmf", label="Chaikin Money Flow", category=IndicatorCategory.VOLUME,
+        id="cmf",
+        label="Chaikin Money Flow",
+        category=IndicatorCategory.VOLUME,
         calc_lines=[
             "cmfMF = ((close - low) - (high - close)) / (high - low) * volume",
             "{var} = ta.sma(cmfMF, {length}) / ta.sma(volume, {length})",
-        ], value_var="oscValue", is_overlay_friendly=False, default_length=20,
-        supports_threshold=True, default_overbought=0.0, default_oversold=0.0,
+        ],
+        value_var="oscValue",
+        is_overlay_friendly=False,
+        default_length=20,
+        supports_threshold=True,
+        default_overbought=0.0,
+        default_oversold=0.0,
     ),
 }
 
 
 class SignalPattern(str, Enum):
-    PRICE_CROSS_MA = "price_cross_ma"           # single overlay-friendly indicator
-    MA_CROSSOVER = "ma_crossover"                # two overlay-friendly indicators
+    PRICE_CROSS_MA = "price_cross_ma"  # single overlay-friendly indicator
+    MA_CROSSOVER = "ma_crossover"  # two overlay-friendly indicators
     OSCILLATOR_THRESHOLD = "oscillator_threshold"  # single threshold-capable indicator
-    BAND_BREAKOUT = "band_breakout"              # single band indicator
+    BAND_BREAKOUT = "band_breakout"  # single band indicator
 
 
 SIGNAL_PATTERN_LABELS = {
@@ -327,12 +462,8 @@ def build_from_spec(spec: BuilderSpec) -> str:
 
     if spec.script_type == "strategy":
         lines.append(f'strategy(title="{spec.title}", overlay={"true" if spec.overlay else "false"},')
-        lines.append(
-            "     initial_capital=10000, default_qty_type=strategy.percent_of_equity,"
-        )
-        lines.append(
-            "     default_qty_value=10, commission_type=strategy.commission.percent, commission_value=0.05)"
-        )
+        lines.append("     initial_capital=10000, default_qty_type=strategy.percent_of_equity,")
+        lines.append("     default_qty_value=10, commission_type=strategy.commission.percent, commission_value=0.05)")
     else:
         lines.append(f'indicator(title="{spec.title}", overlay={"true" if spec.overlay else "false"})')
 
@@ -382,20 +513,20 @@ def build_from_spec(spec: BuilderSpec) -> str:
             )
     else:
         lines.append("")
-        lines.append(
-            'alertcondition(longCondition, title="Long Signal", message="Long signal triggered")'
-        )
-        lines.append(
-            'alertcondition(shortCondition, title="Short Signal", message="Short signal triggered")'
-        )
+        lines.append('alertcondition(longCondition, title="Long Signal", message="Long signal triggered")')
+        lines.append('alertcondition(shortCondition, title="Short Signal", message="Short signal triggered")')
 
     lines.append("")
     lines.append("// ---- Plots ----")
     lines.extend(plot_lines)
-    lines.append('plotshape(longCondition, title="Long", location=location.belowbar,\n'
-                  '     color=color.new(color.green, 0), style=shape.triangleup, size=size.tiny)')
-    lines.append('plotshape(shortCondition, title="Short", location=location.abovebar,\n'
-                  '     color=color.new(color.red, 0), style=shape.triangledown, size=size.tiny)')
+    lines.append(
+        'plotshape(longCondition, title="Long", location=location.belowbar,\n'
+        "     color=color.new(color.green, 0), style=shape.triangleup, size=size.tiny)"
+    )
+    lines.append(
+        'plotshape(shortCondition, title="Short", location=location.abovebar,\n'
+        "     color=color.new(color.red, 0), style=shape.triangledown, size=size.tiny)"
+    )
 
     return "\n".join(lines).strip("\n") + "\n"
 

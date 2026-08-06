@@ -35,9 +35,7 @@ def test_generate_success_with_mocked_transport(monkeypatch):
     request = GenerationRequest(prompt="a simple sma indicator")
 
     fake_response_body = {
-        "content": [
-            {"type": "text", "text": '```pine\n//@version=6\nindicator("SMA")\nplot(ta.sma(close, 14))\n```'}
-        ]
+        "content": [{"type": "text", "text": '```pine\n//@version=6\nindicator("SMA")\nplot(ta.sma(close, 14))\n```'}]
     }
 
     def handler(req: httpx.Request) -> httpx.Response:
