@@ -1,0 +1,34 @@
+//@version={{ pine_version }}
+strategy(
+     title="{{ title }}",
+     overlay={{ "true" if overlay else "false" }},
+     initial_capital={{ initial_capital }},
+     default_qty_type=strategy.percent_of_equity,
+     default_qty_value={{ default_qty_value }},
+     commission_type=strategy.commission.percent,
+     commission_value={{ commission_value }}
+     )
+
+// ---- Inputs ----------------------------------------------------------
+{% for inp in inputs -%}
+{{ inp.name }} = input.{{ inp.type }}({{ inp.default }}, title="{{ inp.label }}"{% if inp.extra %}, {{ inp.extra }}{% endif %})
+{% endfor %}
+// ---- Signal logic ------------------------------------------------------
+{% for line in calc_lines -%}
+{{ line }}
+{% endfor %}
+// ---- Orders ---------------------------------------------------------------
+if {{ long_condition }}
+    strategy.entry("Long", strategy.long)
+
+if {{ short_condition }}
+    strategy.entry("Short", strategy.short)
+
+{% if use_stop_loss %}
+strategy.exit("Exit Long", from_entry="Long", stop=close * (1 - {{ stop_loss_pct }} / 100), limit=close * (1 + {{ take_profit_pct }} / 100))
+strategy.exit("Exit Short", from_entry="Short", stop=close * (1 + {{ stop_loss_pct }} / 100), limit=close * (1 - {{ take_profit_pct }} / 100))
+{% endif %}
+// ---- Plots ---------------------------------------------------------------
+{% for plot in plots -%}
+plot({{ plot.expr }}, title="{{ plot.title }}", color={{ plot.color }})
+{% endfor %}

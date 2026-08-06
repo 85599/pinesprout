@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>{{ title }} — PineSprout Documentation</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+         max-width: 920px; margin: 2rem auto; padding: 0 1.5rem; line-height: 1.55; }
+  h1 { border-bottom: 3px solid #2962FF; padding-bottom: .3rem; }
+  h2 { margin-top: 2.2rem; border-bottom: 1px solid #8884; padding-bottom: .25rem; }
+  table { border-collapse: collapse; width: 100%; margin: 1rem 0; }
+  th, td { border: 1px solid #8884; padding: .5rem .7rem; text-align: left; }
+  th { background: #2962FF1a; }
+  code, pre { font-family: "SF Mono", Menlo, Consolas, monospace; }
+  pre { background: #1116; color: inherit; padding: 1rem; border-radius: 8px; overflow-x: auto; }
+  .badge { display: inline-block; padding: .15rem .6rem; border-radius: 999px;
+           background: #2962FF22; color: #2962FF; font-size: .8rem; margin-right: .4rem; }
+  .warn { color: #b26a00; }
+  footer { margin-top: 3rem; font-size: .85rem; opacity: .7; }
+</style>
+</head>
+<body>
+<h1>{{ title }}</h1>
+<p>
+  <span class="badge">Pine v{{ pine_version }}</span>
+  <span class="badge">{{ script_type }}</span>
+  {% if overlay is not none %}<span class="badge">{{ "overlay" if overlay else "separate pane" }}</span>{% endif %}
+</p>
+
+<p>{{ description }}</p>
+
+<h2>Overview</h2>
+<p>{{ summary }}</p>
+
+<h2>Inputs</h2>
+<table>
+<tr><th>Name</th><th>Type</th><th>Default</th><th>Description</th></tr>
+{% for inp in inputs -%}
+<tr><td><code>{{ inp.name }}</code></td><td>{{ inp.type }}</td><td><code>{{ inp.default }}</code></td><td>{{ inp.label }}</td></tr>
+{% endfor %}
+</table>
+
+<h2>Metrics</h2>
+<table>
+<tr><th>Metric</th><th>Value</th></tr>
+<tr><td>Lines of code</td><td>{{ line_count }}</td></tr>
+<tr><td>Variables</td><td>{{ variable_count }}</td></tr>
+<tr><td>Functions</td><td>{{ function_count }}</td></tr>
+<tr><td>Plots</td><td>{{ plot_count }}</td></tr>
+<tr><td>Complexity score</td><td>{{ complexity_score }}</td></tr>
+</table>
+
+{% if warnings %}
+<h2>Known Considerations</h2>
+<ul>
+{% for w in warnings -%}
+<li class="warn">{{ w }}</li>
+{% endfor %}
+</ul>
+{% endif %}
+
+<h2>Source</h2>
+<pre><code>{{ source_escaped }}</code></pre>
+
+<footer>Generated with PineSprout.</footer>
+</body>
+</html>

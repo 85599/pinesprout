@@ -1,0 +1,14 @@
+# Used by Streamlit Community Cloud (and anyone running `pip install -r
+# requirements.txt`) to install PineSprout itself plus the Streamlit UI.
+#
+# Local development / the PyPI package should instead use:
+#   pip install -e ".[dev]"
+# This file exists specifically for deployment platforms that expect a
+# requirements.txt at the repo root.
+
+-e .
+streamlit>=1.38
+yfinance>=0.2.40
+plotly>=5.20
+streamlit-autorefresh>=1.0.1
+pandas>=2.0

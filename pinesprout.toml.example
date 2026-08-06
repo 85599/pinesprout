@@ -1,0 +1,13 @@
+# Example PineSprout project configuration.
+# Copy to `pinesprout.toml` in your project root to customize defaults.
+# Every key here can also be set via an environment variable prefixed
+# with PINESPROUT_ (e.g. PINESPROUT_INDENT_SIZE=2).
+
+[pinesprout]
+default_pine_version = 6
+indent_size = 4
+max_line_length = 120
+plugin_dir = ".pinesprout/plugins"
+anthropic_model = "claude-sonnet-4-6"
+# anthropic_api_key is best left as the ANTHROPIC_API_KEY env var rather
+# than committed here.

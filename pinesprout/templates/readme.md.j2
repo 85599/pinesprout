@@ -1,0 +1,51 @@
+# {{ title }}
+
+{{ description }}
+
+**Pine Script version:** v{{ pine_version }}
+**Type:** {{ script_type }}
+{% if overlay is not none %}**Overlay:** {{ "Yes" if overlay else "No" }}
+{% endif %}
+
+## Overview
+
+{{ summary }}
+
+## Inputs
+
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+{% for inp in inputs -%}
+| `{{ inp.name }}` | {{ inp.type }} | `{{ inp.default }}` | {{ inp.label }} |
+{% endfor %}
+
+## Key Metrics
+
+| Metric | Value |
+|--------|-------|
+| Lines of code | {{ line_count }} |
+| Variables | {{ variable_count }} |
+| Functions | {{ function_count }} |
+| Plots | {{ plot_count }} |
+| Complexity score | {{ complexity_score }} |
+
+{% if warnings %}
+## Known Considerations
+
+{% for w in warnings -%}
+- {{ w }}
+{% endfor %}
+{% endif %}
+
+## Installation
+
+1. Open [TradingView](https://www.tradingview.com/) and create a new Pine Script.
+2. Copy the contents of `{{ source_filename }}` into the Pine Editor.
+3. Click **Add to Chart**.
+
+## License
+
+{{ license }}
+
+---
+*Generated with PineSprout.*

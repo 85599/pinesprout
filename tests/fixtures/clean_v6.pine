@@ -1,0 +1,28 @@
+//@version=6
+strategy(
+     title="Clean EMA Strategy",
+     overlay=true,
+     initial_capital=10000,
+     default_qty_type=strategy.percent_of_equity,
+     default_qty_value=10,
+     commission_type=strategy.commission.percent,
+     commission_value=0.05
+     )
+
+fastLen = input.int(9, title="Fast EMA Length")
+slowLen = input.int(21, title="Slow EMA Length")
+
+fastEma = ta.ema(close, fastLen)
+slowEma = ta.ema(close, slowLen)
+
+longCondition = ta.crossover(fastEma, slowEma)
+shortCondition = ta.crossunder(fastEma, slowEma)
+
+if longCondition
+    strategy.entry("Long", strategy.long)
+
+if shortCondition
+    strategy.entry("Short", strategy.short)
+
+plot(fastEma, title="Fast EMA", color=color.teal)
+plot(slowEma, title="Slow EMA", color=color.orange)

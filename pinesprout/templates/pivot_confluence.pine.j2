@@ -1,0 +1,153 @@
+//@version={{ pine_version }}
+indicator(title="{{ title }}", shorttitle="{{ shorttitle }}", overlay=true, max_lines_count=500, max_labels_count=500)
+
+// ============================================================================
+// INPUTS
+// ============================================================================
+grpD = "Daily Pivots"
+showDaily   = input.bool(true, title="Show Daily Pivots", group=grpD)
+dailyLevels = input.string("R3,R2,R1,PP,S1,S2,S3", title="Daily Levels (info only)", group=grpD)
+
+grpW = "Weekly Pivots"
+showWeekly  = input.bool(true, title="Show Weekly Pivots", group=grpW)
+
+grpM = "Monthly Pivots"
+showMonthly = input.bool(false, title="Show Monthly Pivots", group=grpM)
+
+grpC = "Confluence"
+showConfluence   = input.bool(true, title="Highlight Confluence Zones", group=grpC)
+confluenceTolPct = input.float(0.15, title="Confluence Tolerance (% of price)",
+     minval=0.01, maxval=2.0, step=0.01, group=grpC)
+minTouches       = input.int(2, title="Min Levels to Count as Confluence", minval=2, maxval=6, group=grpC)
+
+grpS = "Style"
+lineWidth = input.int(1, title="Line Width", minval=1, maxval=4, group=grpS)
+labelSize = input.string("small", title="Label Size", options=["tiny", "small", "normal", "large"], group=grpS)
+
+// ============================================================================
+// PRIOR-PERIOD OHLC (repaint-safe: lookahead explicitly off)
+// ============================================================================
+dHigh  = request.security(syminfo.tickerid, "D", high[1],  lookahead=barmerge.lookahead_off)
+dLow   = request.security(syminfo.tickerid, "D", low[1],   lookahead=barmerge.lookahead_off)
+dClose = request.security(syminfo.tickerid, "D", close[1], lookahead=barmerge.lookahead_off)
+
+wHigh  = request.security(syminfo.tickerid, "W", high[1],  lookahead=barmerge.lookahead_off)
+wLow   = request.security(syminfo.tickerid, "W", low[1],   lookahead=barmerge.lookahead_off)
+wClose = request.security(syminfo.tickerid, "W", close[1], lookahead=barmerge.lookahead_off)
+
+mHigh  = request.security(syminfo.tickerid, "M", high[1],  lookahead=barmerge.lookahead_off)
+mLow   = request.security(syminfo.tickerid, "M", low[1],   lookahead=barmerge.lookahead_off)
+mClose = request.security(syminfo.tickerid, "M", close[1], lookahead=barmerge.lookahead_off)
+
+// ============================================================================
+// CLASSIC PIVOT CALCULATION (reusable function)
+// ============================================================================
+pivotSet(h, l, c) =>
+    pp = (h + l + c) / 3.0
+    r1 = 2.0 * pp - l
+    s1 = 2.0 * pp - h
+    r2 = pp + (h - l)
+    s2 = pp - (h - l)
+    r3 = h + 2.0 * (pp - l)
+    s3 = l - 2.0 * (h - pp)
+    [pp, r1, r2, r3, s1, s2, s3]
+
+[dPP, dR1, dR2, dR3, dS1, dS2, dS3] = pivotSet(dHigh, dLow, dClose)
+[wPP, wR1, wR2, wR3, wS1, wS2, wS3] = pivotSet(wHigh, wLow, wClose)
+[mPP, mR1, mR2, mR3, mS1, mS2, mS3] = pivotSet(mHigh, mLow, mClose)
+
+// ============================================================================
+// PLOTS
+// ============================================================================
+plot(showDaily ? dPP : na, title="Daily PP", color=color.new(color.yellow, 0),
+     linewidth=lineWidth, style=plot.style_stepline)
+plot(showDaily ? dR1 : na, title="Daily R1", color=color.new(color.red, 30),
+     linewidth=lineWidth, style=plot.style_stepline)
+plot(showDaily ? dR2 : na, title="Daily R2", color=color.new(color.red, 45),
+     linewidth=lineWidth, style=plot.style_stepline)
+plot(showDaily ? dR3 : na, title="Daily R3", color=color.new(color.red, 60),
+     linewidth=lineWidth, style=plot.style_stepline)
+plot(showDaily ? dS1 : na, title="Daily S1", color=color.new(color.green, 30),
+     linewidth=lineWidth, style=plot.style_stepline)
+plot(showDaily ? dS2 : na, title="Daily S2", color=color.new(color.green, 45),
+     linewidth=lineWidth, style=plot.style_stepline)
+plot(showDaily ? dS3 : na, title="Daily S3", color=color.new(color.green, 60),
+     linewidth=lineWidth, style=plot.style_stepline)
+
+plot(showWeekly ? wPP : na, title="Weekly PP", color=color.new(color.aqua, 0),
+     linewidth=lineWidth + 1, style=plot.style_stepline)
+plot(showWeekly ? wR1 : na, title="Weekly R1", color=color.new(color.fuchsia, 30),
+     linewidth=lineWidth, style=plot.style_stepline)
+plot(showWeekly ? wS1 : na, title="Weekly S1", color=color.new(color.lime, 30),
+     linewidth=lineWidth, style=plot.style_stepline)
+
+plot(showMonthly ? mPP : na, title="Monthly PP", color=color.new(color.orange, 0),
+     linewidth=lineWidth + 1, style=plot.style_stepline)
+plot(showMonthly ? mR1 : na, title="Monthly R1", color=color.new(color.orange, 40),
+     linewidth=lineWidth, style=plot.style_stepline)
+plot(showMonthly ? mS1 : na, title="Monthly S1", color=color.new(color.teal, 40),
+     linewidth=lineWidth, style=plot.style_stepline)
+
+// ============================================================================
+// CONFLUENCE DETECTION
+// Gathers every enabled level into an array and flags price zones where
+// `minTouches` or more independent levels sit within `confluenceTolPct`% of
+// each other -- i.e. daily/weekly/monthly levels stacking on top of one
+// another, which is the classic "confluence zone" concept.
+// ============================================================================
+var line   confluenceLine  = na
+var label  confluenceLabel = na
+
+addLevel(levelsArr, namesArr, cond, val, name) =>
+    if cond and not na(val)
+        array.push(levelsArr, val)
+        array.push(namesArr, name)
+
+if barstate.islast and showConfluence
+    levels = array.new_float(0)
+    levelNames = array.new_string(0)
+
+    addLevel(levels, levelNames, showDaily,   dPP, "D-PP")
+    addLevel(levels, levelNames, showDaily,   dR1, "D-R1")
+    addLevel(levels, levelNames, showDaily,   dR2, "D-R2")
+    addLevel(levels, levelNames, showDaily,   dR3, "D-R3")
+    addLevel(levels, levelNames, showDaily,   dS1, "D-S1")
+    addLevel(levels, levelNames, showDaily,   dS2, "D-S2")
+    addLevel(levels, levelNames, showDaily,   dS3, "D-S3")
+    addLevel(levels, levelNames, showWeekly,  wPP, "W-PP")
+    addLevel(levels, levelNames, showWeekly,  wR1, "W-R1")
+    addLevel(levels, levelNames, showWeekly,  wS1, "W-S1")
+    addLevel(levels, levelNames, showMonthly, mPP, "M-PP")
+    addLevel(levels, levelNames, showMonthly, mR1, "M-R1")
+    addLevel(levels, levelNames, showMonthly, mS1, "M-S1")
+
+    line.delete(confluenceLine)
+    label.delete(confluenceLabel)
+
+    n = array.size(levels)
+    if n >= minTouches
+        tol = close * confluenceTolPct / 100.0
+        for i = 0 to n - 1
+            baseVal = array.get(levels, i)
+            matchCount = 1
+            matchNames = array.get(levelNames, i)
+            for j = 0 to n - 1
+                if j != i
+                    if math.abs(array.get(levels, j) - baseVal) <= tol
+                        matchCount += 1
+                        matchNames := matchNames + " + " + array.get(levelNames, j)
+            if matchCount >= minTouches
+                confluenceLine := line.new(bar_index - 20, baseVal, bar_index + 20, baseVal,
+                     color=color.new(color.purple, 0), width=lineWidth + 2, style=line.style_dashed)
+                confluenceLabel := label.new(bar_index + 20, baseVal,
+                     text="Confluence: " + matchNames,
+                     style=label.style_label_left, color=color.new(color.purple, 70),
+                     textcolor=color.white, size=size.small)
+
+// ============================================================================
+// ALERTS
+// ============================================================================
+alertcondition(ta.crossover(close, dPP), title="Cross Above Daily PP", message="Price crossed above Daily Pivot Point")
+alertcondition(ta.crossunder(close, dPP), title="Cross Below Daily PP", message="Price crossed below Daily Pivot Point")
+alertcondition(ta.crossover(close, dR1), title="Cross Above Daily R1", message="Price crossed above Daily R1")
+alertcondition(ta.crossunder(close, dS1), title="Cross Below Daily S1", message="Price crossed below Daily S1")

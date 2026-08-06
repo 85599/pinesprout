@@ -1,0 +1,21 @@
+//@version={{ pine_version }}
+indicator(title="{{ title }}", shorttitle="{{ shorttitle }}", overlay={{ "true" if overlay else "false" }})
+
+// ---- Inputs ----------------------------------------------------------
+{% for inp in inputs -%}
+{{ inp.name }} = input.{{ inp.type }}({{ inp.default }}, title="{{ inp.label }}"{% if inp.extra %}, {{ inp.extra }}{% endif %})
+{% endfor %}
+// ---- Calculations ------------------------------------------------------
+{% for line in calc_lines -%}
+{{ line }}
+{% endfor %}
+// ---- Plots ---------------------------------------------------------------
+{% for plot in plots -%}
+plot({{ plot.expr }}, title="{{ plot.title }}", color={{ plot.color }}{% if plot.linewidth %}, linewidth={{ plot.linewidth }}{% endif %})
+{% endfor %}
+{% if alerts %}
+// ---- Alerts ---------------------------------------------------------------
+{% for alert in alerts -%}
+alertcondition({{ alert.condition }}, title="{{ alert.title }}", message="{{ alert.message }}")
+{% endfor %}
+{% endif %}

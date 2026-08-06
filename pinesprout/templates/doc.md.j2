@@ -1,0 +1,38 @@
+# {{ title }} — Documentation
+
+`Pine v{{ pine_version }}` · `{{ script_type }}`{% if overlay is not none %} · `{{ "overlay" if overlay else "separate pane" }}`{% endif %}
+
+{{ description }}
+
+## Overview
+
+{{ summary }}
+
+## Inputs
+
+| Name | Type | Default | Description |
+|------|------|---------|-------------|
+{% for inp in inputs -%}
+| `{{ inp.name }}` | {{ inp.type }} | `{{ inp.default }}` | {{ inp.label }} |
+{% endfor %}
+
+## Metrics
+
+| Metric | Value |
+|--------|-------|
+| Lines of code | {{ line_count }} |
+| Variables | {{ variable_count }} |
+| Functions | {{ function_count }} |
+| Plots | {{ plot_count }} |
+| Complexity score | {{ complexity_score }} |
+
+{% if warnings %}
+## Known Considerations
+
+{% for w in warnings -%}
+- {{ w }}
+{% endfor %}
+{% endif %}
+
+---
+*Generated with PineSprout.*

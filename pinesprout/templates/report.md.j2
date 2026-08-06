@@ -1,0 +1,88 @@
+# Strategy / Indicator Analysis Report
+
+**File:** `{{ file }}`
+**Generated:** {{ generated_at }}
+**Pine version:** v{{ pine_version }}
+**Type:** {{ script_type }}
+
+## Structure
+
+| Metric | Value |
+|---|---|
+| Total lines | {{ line_count }} |
+| Code lines | {{ code_line_count }} |
+| Comment lines | {{ comment_line_count }} |
+| Blank lines | {{ blank_line_count }} |
+| Variables declared | {{ variable_count }} |
+| Functions declared | {{ function_count }} |
+| Max nesting depth | {{ max_nesting_depth }} |
+| Complexity score | {{ complexity_score }} |
+
+## Inputs ({{ input_count }})
+
+{% if inputs_by_type -%}
+| Input type | Count |
+|---|---|
+{% for t, c in inputs_by_type.items() -%}
+| `{{ t }}` | {{ c }} |
+{% endfor %}
+{% else -%}
+_No inputs detected._
+{% endif %}
+
+## Signals & Output
+
+- Plot calls: **{{ plot_count }}**
+- Alert calls: **{{ alert_count }}**
+- Strategy order calls: **{{ strategy_entry_count }}**
+- Uses `request.security` (cross-context data): **{{ "Yes" if uses_security else "No" }}**
+- Uses arrays / matrices / maps: **{{ uses_arrays }} / {{ uses_matrices }} / {{ uses_maps }}**
+
+## Technical Analysis Function Usage
+
+{% if ta_function_calls -%}
+| Function | Calls |
+|---|---|
+{% for fn, c in ta_function_calls.items() -%}
+| `{{ fn }}` | {{ c }} |
+{% endfor %}
+{% else -%}
+_No `ta.*` calls detected._
+{% endif %}
+
+## Lint Summary
+
+- Errors: **{{ lint_errors }}**
+- Warnings: **{{ lint_warnings }}**
+- Info: **{{ lint_info }}**
+
+{% if lint_issues %}
+| Line | Severity | Category | Message |
+|---|---|---|---|
+{% for issue in lint_issues -%}
+| {{ issue.line }} | {{ issue.severity }} | {{ issue.category }} | {{ issue.message }} |
+{% endfor %}
+{% endif %}
+
+## Optimization Suggestions
+
+{% if optimization_suggestions -%}
+{% for s in optimization_suggestions -%}
+- **Line {{ s.line }} — {{ s.title }}:** {{ s.detail }}
+{% endfor %}
+{% else -%}
+_No optimization suggestions._
+{% endif %}
+
+## Warnings
+
+{% if warnings -%}
+{% for w in warnings -%}
+- {{ w }}
+{% endfor %}
+{% else -%}
+_None._
+{% endif %}
+
+---
+*Generated with PineSprout.*

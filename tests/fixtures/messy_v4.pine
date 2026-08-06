@@ -1,0 +1,24 @@
+//@version=4
+study("Messy RSI Strategy", overlay=false)
+
+len = input(14)
+obLevel = 70
+osLevel = 30
+unusedVar = close * 2
+
+r = rsi(close, len)
+smoothed = sma(r, 3)
+
+longCond = crossover(r, osLevel)
+shortCond = crossunder(r, obLevel)
+
+for i = 0 to 10
+    x = sma(close, len)
+
+if longCond == true
+    strategy.entry("Long", strategy.long)
+
+sec = security(syminfo.tickerid, "D", close)
+
+plot(r, title="RSI")
+plot(smoothed, title="Smoothed")
