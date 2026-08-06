@@ -69,6 +69,7 @@ Changelog = "https://github.com/85599/pinesprout/blob/main/CHANGELOG.md"
 [project.scripts]
 pinesprout = "pinesprout.cli:app"
 psp = "pinesprout.cli:app"
+pf = "pinesprout.cli:app"
 
 [tool.hatch.build.targets.wheel]
 packages = ["pinesprout"]
