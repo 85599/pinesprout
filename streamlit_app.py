@@ -18,7 +18,6 @@ Yahoo Finance style quotes, charts, financials, news & statistics.
 Run locally:
     streamlit run streamlit_app.py
 """
-
 from __future__ import annotations
 
 import io
@@ -225,21 +224,38 @@ def format_number(num):
             return f"₹{num/1e7:.2f} Cr"
         elif abs(num) >= 1e5:
             return f"₹{num/1e5:.2f} L"
-        elif abs(num) >= 1e3:
-            return f"₹{num/1e3:.2f} K"
         else:
-            return f"₹{num:.2f}"
+            return f"₹{num:,.2f}"
     except Exception:
         return str(num)
 
 
-def format_pct(val):
+def format_pct(val, already_percent: bool = False):
+    """Format ratio/percent fields.
+    - already_percent=True  → value is already in percent points (e.g. div yield 0.45 → 0.45%)
+    - already_percent=False → value is a fraction (e.g. ROE 0.15 → 15.00%)
+    """
     if val is None or (isinstance(val, float) and pd.isna(val)):
-        return "N/A"
+        return "—"
     try:
-        return f"{float(val)*100:.2f}%" if abs(float(val)) < 10 else f"{float(val):.2f}%"
+        v = float(val)
+        if already_percent:
+            return f"{v:.2f}%"
+        # fraction → percent
+        if abs(v) <= 1:
+            return f"{v * 100:.2f}%"
+        return f"{v:.2f}%"
     except Exception:
-        return "N/A"
+        return "—"
+
+
+def _fmt_price(val):
+    if val is None or (isinstance(val, float) and pd.isna(val)):
+        return "—"
+    try:
+        return f"₹{float(val):,.2f}"
+    except Exception:
+        return "—"
 
 
 def create_candlestick_chart(hist: pd.DataFrame, symbol: str):
@@ -338,45 +354,79 @@ def render_indian_stock_dashboard():
     sector = info.get("sector") or info.get("sectorDisp") or "—"
     industry = info.get("industry") or info.get("industryDisp") or "—"
 
-    h1, h2, h3 = st.columns([3, 1, 1])
-    with h1:
-        st.subheader(name)
-        st.caption(f"{symbol}  •  {sector}  •  {industry}")
-    with h2:
-        price = info.get("currentPrice") or info.get("regularMarketPrice")
-        prev = info.get("previousClose")
-        if price and prev:
-            change = price - prev
-            pct = (change / prev) * 100
-            st.metric("Price", f"₹{price:,.2f}", f"{change:+.2f} ({pct:+.2f}%)")
-        elif price:
-            st.metric("Price", f"₹{price:,.2f}")
-        else:
-            st.metric("Price", "N/A")
-    with h3:
-        if not hist.empty:
-            st.metric("Volume", f"{hist['Volume'].iloc[-1]:,.0f}")
+    price = info.get("currentPrice") or info.get("regularMarketPrice")
+    prev = info.get("previousClose")
+    change = pct = None
+    if price is not None and prev:
+        change = price - prev
+        pct = (change / prev) * 100
 
-    st.markdown("---")
+    # Big price header (no truncation)
+    change_html = ""
+    if change is not None and pct is not None:
+        color = "#26a69a" if change >= 0 else "#ef5350"
+        arrow = "▲" if change >= 0 else "▼"
+        change_html = f'<span style="color:{color};font-size:1.1rem;margin-left:12px;">{arrow} {change:+.2f} ({pct:+.2f}%)</span>'
 
-    # ---- Key metrics ----
-    m1, m2, m3, m4, m5, m6 = st.columns(6)
-    m1.metric("Open", f"₹{info.get('open') or info.get('regularMarketOpen') or 'N/A'}")
-    m2.metric("Day High", f"₹{info.get('dayHigh') or info.get('regularMarketDayHigh') or 'N/A'}")
-    m3.metric("Day Low", f"₹{info.get('dayLow') or info.get('regularMarketDayLow') or 'N/A'}")
-    m4.metric("52W High", f"₹{info.get('fiftyTwoWeekHigh') or 'N/A'}")
-    m5.metric("52W Low", f"₹{info.get('fiftyTwoWeekLow') or 'N/A'}")
+    vol_str = f"{hist['Volume'].iloc[-1]:,.0f}" if not hist.empty else "—"
+    price_str = f"₹{price:,.2f}" if price is not None else "—"
+
+    st.markdown(f"### {name}")
+    st.caption(f"{symbol}  •  {sector}  •  {industry}")
+    st.markdown(
+        f"""
+        <div style="display:flex;align-items:baseline;gap:24px;flex-wrap:wrap;margin:8px 0 16px 0;">
+          <div style="font-size:2.2rem;font-weight:700;">{price_str}{change_html}</div>
+          <div style="font-size:0.95rem;opacity:0.8;">Volume: <b>{vol_str}</b></div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    # ---- Key metrics as HTML cards (never truncate) ----
+    def _card(label: str, value: str) -> str:
+        return f"""
+        <div style="
+            background:rgba(128,128,128,0.12);
+            border:1px solid rgba(128,128,128,0.25);
+            border-radius:10px;
+            padding:12px 10px;
+            text-align:center;
+            min-height:72px;
+        ">
+            <div style="font-size:0.75rem;opacity:0.7;margin-bottom:4px;">{label}</div>
+            <div style="font-size:1.05rem;font-weight:600;word-break:break-all;">{value}</div>
+        </div>
+        """
+
     pe = info.get("trailingPE")
-    m6.metric("P/E (TTM)", f"{pe:.2f}" if pe else "N/A")
-
-    m7, m8, m9, m10, m11, m12 = st.columns(6)
     mcap = info.get("marketCap")
-    m7.metric("Market Cap", format_number(mcap) if mcap else "N/A")
-    m8.metric("Div Yield", format_pct(info.get("dividendYield")))
-    m9.metric("Beta", f"{info.get('beta'):.2f}" if info.get("beta") else "N/A")
-    m10.metric("EPS (TTM)", f"₹{info.get('trailingEps'):.2f}" if info.get("trailingEps") else "N/A")
-    m11.metric("Book Value", f"₹{info.get('bookValue'):.2f}" if info.get("bookValue") else "N/A")
-    m12.metric("ROE", format_pct(info.get("returnOnEquity")))
+    beta = info.get("beta")
+    row1 = [
+        ("Open", _fmt_price(info.get("open") or info.get("regularMarketOpen"))),
+        ("Day High", _fmt_price(info.get("dayHigh") or info.get("regularMarketDayHigh"))),
+        ("Day Low", _fmt_price(info.get("dayLow") or info.get("regularMarketDayLow"))),
+        ("52W High", _fmt_price(info.get("fiftyTwoWeekHigh"))),
+        ("52W Low", _fmt_price(info.get("fiftyTwoWeekLow"))),
+        ("P/E (TTM)", f"{pe:.2f}" if pe else "—"),
+    ]
+    row2 = [
+        ("Market Cap", format_number(mcap) if mcap else "—"),
+        ("Div Yield", format_pct(info.get("dividendYield"), already_percent=True)),
+        ("Beta", f"{beta:.2f}" if beta else "—"),
+        ("EPS (TTM)", _fmt_price(info.get("trailingEps"))),
+        ("Book Value", _fmt_price(info.get("bookValue"))),
+        ("ROE", format_pct(info.get("returnOnEquity"))),
+    ]
+
+    cols = st.columns(6)
+    for col, (lab, val) in zip(cols, row1):
+        col.markdown(_card(lab, val), unsafe_allow_html=True)
+
+    st.markdown("")  # small gap
+    cols = st.columns(6)
+    for col, (lab, val) in zip(cols, row2):
+        col.markdown(_card(lab, val), unsafe_allow_html=True)
 
     st.markdown("---")
 
@@ -537,13 +587,13 @@ def render_indian_stock_dashboard():
             st.markdown("#### Dividends & Splits")
             div_data = {
                 "Forward Dividend & Yield": (
-                    f"₹{info.get('dividendRate'):.2f} ({format_pct(info.get('dividendYield'))})"
-                    if info.get("dividendRate") else "N/A"
+                    f"₹{info.get('dividendRate'):.2f} ({format_pct(info.get('dividendYield'), already_percent=True)})"
+                    if info.get("dividendRate") else "—"
                 ),
-                "Trailing Annual Dividend": f"₹{info.get('trailingAnnualDividendRate'):.2f}" if info.get("trailingAnnualDividendRate") else "N/A",
-                "Ex-Dividend Date": str(info.get("exDividendDate"))[:10] if info.get("exDividendDate") else "N/A",
+                "Trailing Annual Dividend": f"₹{info.get('trailingAnnualDividendRate'):.2f}" if info.get("trailingAnnualDividendRate") else "—",
+                "Ex-Dividend Date": str(info.get("exDividendDate"))[:10] if info.get("exDividendDate") else "—",
                 "Payout Ratio": format_pct(info.get("payoutRatio")),
-                "5 Year Avg Dividend Yield": format_pct(info.get("fiveYearAvgDividendYield")),
+                "5 Year Avg Dividend Yield": format_pct(info.get("fiveYearAvgDividendYield"), already_percent=True),
                 "Last Split Factor": info.get("lastSplitFactor") or "N/A",
                 "Last Split Date": str(info.get("lastSplitDate"))[:10] if info.get("lastSplitDate") else "N/A",
             }
