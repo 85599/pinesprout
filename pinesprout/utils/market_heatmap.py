@@ -116,12 +116,18 @@ def _load_nifty50_data() -> list[dict]:
 def _color_for_change(pct):
     if pct is None:
         return "#555555"
-    if pct >= 3: return "#006400"
-    if pct >= 1.5: return "#228B22"
-    if pct >= 0.3: return "#2E8B57"
-    if pct > -0.3: return "#6B7280"
-    if pct > -1.5: return "#B22222"
-    if pct > -3: return "#8B0000"
+    if pct >= 3:
+        return "#006400"
+    if pct >= 1.5:
+        return "#228B22"
+    if pct >= 0.3:
+        return "#2E8B57"
+    if pct > -0.3:
+        return "#6B7280"
+    if pct > -1.5:
+        return "#B22222"
+    if pct > -3:
+        return "#8B0000"
     return "#5C0000"
 
 
@@ -153,7 +159,7 @@ def render_india_nifty_heatmap(theme: str = "dark") -> None:
     for i in range(0, len(data), cols_per_row):
         row = data[i:i + cols_per_row]
         cols = st.columns(cols_per_row)
-        for col, item in zip(cols, row):
+        for col, item in zip(cols, row, strict=False):
             pct = item["change_pct"]
             bg = _color_for_change(pct)
             price_str = f"₹{item['price']:,.2f}" if item["price"] is not None else "—"
