@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from typing import TypedDict
 
 import streamlit as st
 
@@ -65,6 +66,13 @@ BLOCK_COLORS = {
     "1-year performance": "Perf.Y",
 }
 
+class StockQuote(TypedDict):
+    symbol: str
+    name: str
+    price: float | None
+    change_pct: float | None
+
+
 NIFTY50 = [
     ("RELIANCE.NS", "Reliance"), ("TCS.NS", "TCS"), ("HDFCBANK.NS", "HDFC Bank"),
     ("INFY.NS", "Infosys"), ("ICICIBANK.NS", "ICICI Bank"), ("HINDUNILVR.NS", "HUL"),
@@ -86,7 +94,7 @@ NIFTY50 = [
 ]
 
 
-def _fetch_one(symbol: str, name: str) -> dict:
+def _fetch_one(symbol: str, name: str) -> StockQuote:
     try:
         t = yf.Ticker(symbol)
         info = t.info or {}
@@ -101,7 +109,7 @@ def _fetch_one(symbol: str, name: str) -> dict:
 
 
 @st.cache_data(ttl=120)
-def _load_nifty50_data() -> list[dict]:
+def _load_nifty50_data() -> list[StockQuote]:
     if not HAS_YF:
         return []
     results = []
@@ -113,7 +121,7 @@ def _load_nifty50_data() -> list[dict]:
     return results
 
 
-def _color_for_change(pct):
+def _color_for_change(pct: float | None) -> str:
     if pct is None:
         return "#555555"
     if pct >= 3:
@@ -182,7 +190,7 @@ def render_india_nifty_heatmap(theme: str = "dark") -> None:
         st.rerun()
 
 
-def _build_widget_html(config: dict, height: int) -> str:
+def _build_widget_html(config: dict[str, object], height: int) -> str:
     config = dict(config)
     inner = max(height - 8, 400)
     config["width"] = "100%"
@@ -258,7 +266,7 @@ def render_tradingview_heatmap(theme: str = "dark", key_prefix: str = "kj_heatma
     with c6:
         height = st.slider("Height (px)", 500, 1600, 900, 50, key=f"{key_prefix}_ht")
 
-    config = {
+    config: dict[str, object] = {
         "grouping": GROUPINGS[grp],
         "blockSize": BLOCK_SIZES[size],
         "blockColor": BLOCK_COLORS[color],
