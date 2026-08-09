@@ -18,6 +18,7 @@ Yahoo Finance style quotes, charts, financials, news & statistics.
 Run locally:
     streamlit run streamlit_app.py
 """
+
 from __future__ import annotations
 
 import io
@@ -161,26 +162,64 @@ POPULAR_STOCKS = {
 }
 
 
-@st.cache_data(ttl=300)
+@st.cache_data(ttl=180)
 def get_ticker_info(symbol: str):
+    """Fetch quote info. .info is flaky on cloud — merge fast_info as fallback."""
     if not HAS_MARKET_LIBS:
         return {}
+    out: dict = {}
     try:
         ticker = yf.Ticker(symbol)
-        info = ticker.info
-        return info if info else {}
+        try:
+            info = ticker.info or {}
+            if info:
+                out.update(info)
+        except Exception:
+            pass
+        try:
+            fi = getattr(ticker, "fast_info", None)
+            if fi:
+                # fast_info is a mapping-like object
+                mapping = {
+                    "currentPrice": "last_price",
+                    "regularMarketPrice": "last_price",
+                    "previousClose": "previous_close",
+                    "open": "open",
+                    "dayHigh": "day_high",
+                    "dayLow": "day_low",
+                    "fiftyTwoWeekHigh": "year_high",
+                    "fiftyTwoWeekLow": "year_low",
+                    "marketCap": "market_cap",
+                    "volume": "last_volume",
+                }
+                for dest, src in mapping.items():
+                    if out.get(dest) is None:
+                        try:
+                            val = fi.get(src) if hasattr(fi, "get") else getattr(fi, src, None)
+                            if val is not None:
+                                out[dest] = val
+                        except Exception:
+                            pass
+        except Exception:
+            pass
     except Exception:
-        return {}
+        pass
+    return out
 
 
-@st.cache_data(ttl=300)
+@st.cache_data(ttl=180)
 def get_history(symbol: str, period: str = "1y", interval: str = "1d"):
     if not HAS_MARKET_LIBS:
         return pd.DataFrame()
     try:
         ticker = yf.Ticker(symbol)
-        hist = ticker.history(period=period, interval=interval)
-        return hist
+        hist = ticker.history(period=period, interval=interval, auto_adjust=True)
+        if hist is None or hist.empty:
+            # fallback download
+            hist = yf.download(symbol, period=period, interval=interval, progress=False, auto_adjust=True)
+            if isinstance(hist.columns, pd.MultiIndex):
+                hist.columns = hist.columns.get_level_values(0)
+        return hist if hist is not None else pd.DataFrame()
     except Exception:
         return pd.DataFrame()
 
@@ -342,33 +381,60 @@ def render_indian_stock_dashboard():
         return
 
     with st.spinner(f"Loading {symbol}..."):
-        info = get_ticker_info(symbol)
+        info = get_ticker_info(symbol) or {}
+        # Always fetch daily history for reliable OHLC fallback (info is flaky on cloud)
         hist = get_history(symbol, period=period, interval=interval)
+        hist_1y = get_history(symbol, period="1y", interval="1d") if period != "1y" else hist
 
-    if not info and hist.empty:
+    if (not info) and hist.empty:
         st.error(f"Could not fetch data for **{symbol}**. Try adding `.NS` (NSE) or `.BO` (BSE).")
         return
+
+    # ---- Derive OHLC from history when .info is empty (common on Streamlit Cloud) ----
+    last = hist.iloc[-1] if not hist.empty else None
+    prev_bar = hist.iloc[-2] if (not hist.empty and len(hist) >= 2) else None
+
+    price = (
+        info.get("currentPrice")
+        or info.get("regularMarketPrice")
+        or (float(last["Close"]) if last is not None else None)
+    )
+    prev = info.get("previousClose") or (float(prev_bar["Close"]) if prev_bar is not None else None)
+    day_open = info.get("open") or info.get("regularMarketOpen") or (float(last["Open"]) if last is not None else None)
+    day_high = info.get("dayHigh") or info.get("regularMarketDayHigh") or (float(last["High"]) if last is not None else None)
+    day_low = info.get("dayLow") or info.get("regularMarketDayLow") or (float(last["Low"]) if last is not None else None)
+    volume_val = info.get("volume") or info.get("regularMarketVolume")
+    if volume_val is None and last is not None:
+        volume_val = float(last["Volume"])
+
+    # 52-week from 1y history if info missing
+    if not hist_1y.empty:
+        w52_high = info.get("fiftyTwoWeekHigh") or float(hist_1y["High"].max())
+        w52_low = info.get("fiftyTwoWeekLow") or float(hist_1y["Low"].min())
+    else:
+        w52_high = info.get("fiftyTwoWeekHigh")
+        w52_low = info.get("fiftyTwoWeekLow")
+
+    change = pct = None
+    if price is not None and prev:
+        change = price - prev
+        pct = (change / prev) * 100
 
     # ---- Header ----
     name = info.get("shortName") or info.get("longName") or symbol
     sector = info.get("sector") or info.get("sectorDisp") or "—"
     industry = info.get("industry") or info.get("industryDisp") or "—"
 
-    price = info.get("currentPrice") or info.get("regularMarketPrice")
-    prev = info.get("previousClose")
-    change = pct = None
-    if price is not None and prev:
-        change = price - prev
-        pct = (change / prev) * 100
-
-    # Big price header (no truncation)
     change_html = ""
     if change is not None and pct is not None:
         color = "#26a69a" if change >= 0 else "#ef5350"
         arrow = "▲" if change >= 0 else "▼"
-        change_html = f'<span style="color:{color};font-size:1.1rem;margin-left:12px;">{arrow} {change:+.2f} ({pct:+.2f}%)</span>'
+        change_html = (
+            f'<span style="color:{color};font-size:1.1rem;margin-left:12px;">'
+            f"{arrow} {change:+.2f} ({pct:+.2f}%)</span>"
+        )
 
-    vol_str = f"{hist['Volume'].iloc[-1]:,.0f}" if not hist.empty else "—"
+    vol_str = f"{volume_val:,.0f}" if volume_val is not None else "—"
     price_str = f"₹{price:,.2f}" if price is not None else "—"
 
     st.markdown(f"### {name}")
@@ -403,11 +469,11 @@ def render_indian_stock_dashboard():
     mcap = info.get("marketCap")
     beta = info.get("beta")
     row1 = [
-        ("Open", _fmt_price(info.get("open") or info.get("regularMarketOpen"))),
-        ("Day High", _fmt_price(info.get("dayHigh") or info.get("regularMarketDayHigh"))),
-        ("Day Low", _fmt_price(info.get("dayLow") or info.get("regularMarketDayLow"))),
-        ("52W High", _fmt_price(info.get("fiftyTwoWeekHigh"))),
-        ("52W Low", _fmt_price(info.get("fiftyTwoWeekLow"))),
+        ("Open", _fmt_price(day_open)),
+        ("Day High", _fmt_price(day_high)),
+        ("Day Low", _fmt_price(day_low)),
+        ("52W High", _fmt_price(w52_high)),
+        ("52W Low", _fmt_price(w52_low)),
         ("P/E (TTM)", f"{pe:.2f}" if pe else "—"),
     ]
     row2 = [
@@ -420,12 +486,12 @@ def render_indian_stock_dashboard():
     ]
 
     cols = st.columns(6)
-    for col, (lab, val) in zip(cols, row1):
+    for col, (lab, val) in zip(cols, row1, strict=False):
         col.markdown(_card(lab, val), unsafe_allow_html=True)
 
-    st.markdown("")  # small gap
+    st.markdown("")
     cols = st.columns(6)
-    for col, (lab, val) in zip(cols, row2):
+    for col, (lab, val) in zip(cols, row2, strict=False):
         col.markdown(_card(lab, val), unsafe_allow_html=True)
 
     st.markdown("---")
