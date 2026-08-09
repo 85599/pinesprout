@@ -12,56 +12,86 @@ Every generated/uploaded script can then be linted, formatted, analyzed,
 optimized, explained, and documented -- all in the browser, with
 one-click downloads for each artifact.
 
+Also includes a full **Indian Stock Market Dashboard** (NSE/BSE) with
+Yahoo Finance style quotes, charts, financials, news & statistics.
+
 Run locally:
     streamlit run streamlit_app.py
-
-Deploy on Streamlit Community Cloud: point it at this file as the "Main
-file path" for the repo; `requirements.txt` at the repo root installs
-PineSprout itself (`-e .`) plus Streamlit.
 """
 
 from __future__ import annotations
 
 import io
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
+import warnings
+warnings.filterwarnings("ignore")
 
 import streamlit as st
+import pandas as pd
 
-from pinesprout.core.analyzer import analyze
-from pinesprout.core.explainer import explain_script_summary, explain_source
-from pinesprout.core.formatter import FormatOptions, format_source
-from pinesprout.core.linter import Severity, lint_source
-from pinesprout.core.optimizer import optimize_source
-from pinesprout.core.upgrader import detect_version, upgrade_source
-from pinesprout.generators.ai_generator import (
-    GenerationError,
-    GenerationRequest,
-    generate_pine_script,
-)
-from pinesprout.generators.doc_generator import DocFormat, generate_docs
-from pinesprout.generators.readme_generator import generate_readme
-from pinesprout.generators.report_generator import generate_report
-from pinesprout.generators.template_generator import (
-    TemplateKind,
-    TemplateSpec,
-    generate_from_template,
-)
-from pinesprout.generators.template_builder import (
-    INDICATORS,
-    RiskPreset,
-    RISK_PRESET_LABELS,
-    SignalPattern,
-    SIGNAL_PATTERN_LABELS,
-    BuilderSpec,
-    build_from_spec,
-    estimate_combination_count,
-    indicators_for_pattern,
-)
-from pinesprout.utils.about import render_about_section
-from pinesprout.utils.index_watch import render_index_watch
-from pinesprout.utils.market_heatmap import render_heatmap_tab
-from pinesprout.utils.streamlit_ticker import DEFAULT_SYMBOLS, render_ticker_banner
-from pinesprout.utils.theme import get_theme, init_theme, inject_theme_css, theme_toggle
+# Optional market libs (for Indian Stock Dashboard)
+try:
+    import yfinance as yf
+    import plotly.graph_objects as go
+    from plotly.subplots import make_subplots
+    HAS_MARKET_LIBS = True
+except ImportError:
+    HAS_MARKET_LIBS = False
+
+# PineSprout core (optional — app still works for market mode without it)
+try:
+    from pinesprout.core.analyzer import analyze
+    from pinesprout.core.explainer import explain_script_summary, explain_source
+    from pinesprout.core.formatter import FormatOptions, format_source
+    from pinesprout.core.linter import Severity, lint_source
+    from pinesprout.core.optimizer import optimize_source
+    from pinesprout.core.upgrader import detect_version, upgrade_source
+    from pinesprout.generators.ai_generator import (
+        GenerationError,
+        GenerationRequest,
+        generate_pine_script,
+    )
+    from pinesprout.generators.doc_generator import DocFormat, generate_docs
+    from pinesprout.generators.readme_generator import generate_readme
+    from pinesprout.generators.report_generator import generate_report
+    from pinesprout.generators.template_generator import (
+        TemplateKind,
+        TemplateSpec,
+        generate_from_template,
+    )
+    from pinesprout.generators.template_builder import (
+        INDICATORS,
+        RiskPreset,
+        RISK_PRESET_LABELS,
+        SignalPattern,
+        SIGNAL_PATTERN_LABELS,
+        BuilderSpec,
+        build_from_spec,
+        estimate_combination_count,
+        indicators_for_pattern,
+    )
+    from pinesprout.utils.about import render_about_section
+    from pinesprout.utils.index_watch import render_index_watch
+    from pinesprout.utils.market_heatmap import render_heatmap_tab
+    from pinesprout.utils.streamlit_ticker import DEFAULT_SYMBOLS, render_ticker_banner
+    from pinesprout.utils.theme import get_theme, init_theme, inject_theme_css, theme_toggle
+    HAS_PINESPROUT = True
+except ImportError:
+    HAS_PINESPROUT = False
+    # Minimal stubs so the file can still run the stock dashboard alone
+    class Severity:
+        ERROR = "error"
+        WARNING = "warning"
+        INFO = "info"
+    def init_theme(default="dark"): pass
+    def inject_theme_css(): pass
+    def theme_toggle(**kwargs): pass
+    def get_theme(): return "dark"
+    def render_ticker_banner(*args, **kwargs): pass
+    def render_index_watch(*args, **kwargs): st.info("PineSprout index watch not available.")
+    def render_heatmap_tab(*args, **kwargs): st.info("PineSprout heatmap not available.")
+    def render_about_section(): st.info("PineSprout about section not available.")
+    DEFAULT_SYMBOLS = []
 
 st.set_page_config(
     page_title="PineSprout Studio",
@@ -80,22 +110,462 @@ if "pine_source" not in st.session_state:
 if "pine_filename" not in st.session_state:
     st.session_state.pine_filename = "script.pine"
 
-TEMPLATE_LABELS: dict[TemplateKind, str] = {
-    TemplateKind.PIVOT_CONFLUENCE: "📐 Daily/Weekly/Monthly Pivot Points + Confluence Zones",
-    TemplateKind.EMA_CROSS_INDICATOR: "📈 EMA Crossover Indicator",
-    TemplateKind.RSI_INDICATOR: "📊 RSI Indicator",
-    TemplateKind.EMA_CROSS_STRATEGY: "💰 EMA Crossover Strategy",
-    TemplateKind.RSI_STRATEGY: "💰 RSI Mean-Reversion Strategy",
-    TemplateKind.BLANK_INDICATOR: "⬜ Blank Indicator Scaffold",
-    TemplateKind.BLANK_STRATEGY: "⬜ Blank Strategy Scaffold",
-}
-
-SEVERITY_ICON = {Severity.ERROR: "🔴", Severity.WARNING: "🟡", Severity.INFO: "🔵"}
+if HAS_PINESPROUT:
+    TEMPLATE_LABELS: dict[TemplateKind, str] = {
+        TemplateKind.PIVOT_CONFLUENCE: "📐 Daily/Weekly/Monthly Pivot Points + Confluence Zones",
+        TemplateKind.EMA_CROSS_INDICATOR: "📈 EMA Crossover Indicator",
+        TemplateKind.RSI_INDICATOR: "📊 RSI Indicator",
+        TemplateKind.EMA_CROSS_STRATEGY: "💰 EMA Crossover Strategy",
+        TemplateKind.RSI_STRATEGY: "💰 RSI Mean-Reversion Strategy",
+        TemplateKind.BLANK_INDICATOR: "⬜ Blank Indicator Scaffold",
+        TemplateKind.BLANK_STRATEGY: "⬜ Blank Strategy Scaffold",
+    }
+    SEVERITY_ICON = {Severity.ERROR: "🔴", Severity.WARNING: "🟡", Severity.INFO: "🔵"}
+else:
+    TEMPLATE_LABELS = {}
+    SEVERITY_ICON = {}
 
 
 def _set_source(source: str, filename: str) -> None:
     st.session_state.pine_source = source
     st.session_state.pine_filename = filename
+
+
+# ===========================================================================
+# INDIAN STOCK MARKET DASHBOARD (Yahoo Finance style)
+# ===========================================================================
+
+POPULAR_STOCKS = {
+    "Reliance Industries": "RELIANCE.NS",
+    "TCS": "TCS.NS",
+    "HDFC Bank": "HDFCBANK.NS",
+    "Infosys": "INFY.NS",
+    "ICICI Bank": "ICICIBANK.NS",
+    "Hindustan Unilever": "HINDUNILVR.NS",
+    "ITC": "ITC.NS",
+    "SBI": "SBIN.NS",
+    "Bharti Airtel": "BHARTIARTL.NS",
+    "Kotak Mahindra Bank": "KOTAKBANK.NS",
+    "Larsen & Toubro": "LT.NS",
+    "Axis Bank": "AXISBANK.NS",
+    "Bajaj Finance": "BAJFINANCE.NS",
+    "Asian Paints": "ASIANPAINT.NS",
+    "Maruti Suzuki": "MARUTI.NS",
+    "Sun Pharma": "SUNPHARMA.NS",
+    "Titan": "TITAN.NS",
+    "Wipro": "WIPRO.NS",
+    "UltraTech Cement": "ULTRACEMCO.NS",
+    "Nestle India": "NESTLEIND.NS",
+    "Nifty 50": "^NSEI",
+    "Sensex": "^BSESN",
+    "Bank Nifty": "^NSEBANK",
+}
+
+
+@st.cache_data(ttl=300)
+def get_ticker_info(symbol: str):
+    if not HAS_MARKET_LIBS:
+        return {}
+    try:
+        ticker = yf.Ticker(symbol)
+        info = ticker.info
+        return info if info else {}
+    except Exception:
+        return {}
+
+
+@st.cache_data(ttl=300)
+def get_history(symbol: str, period: str = "1y", interval: str = "1d"):
+    if not HAS_MARKET_LIBS:
+        return pd.DataFrame()
+    try:
+        ticker = yf.Ticker(symbol)
+        hist = ticker.history(period=period, interval=interval)
+        return hist
+    except Exception:
+        return pd.DataFrame()
+
+
+@st.cache_data(ttl=600)
+def get_financials(symbol: str):
+    if not HAS_MARKET_LIBS:
+        return {}
+    try:
+        ticker = yf.Ticker(symbol)
+        return {
+            "income": ticker.financials,
+            "balance": ticker.balance_sheet,
+            "cashflow": ticker.cashflow,
+            "quarterly_income": ticker.quarterly_financials,
+            "quarterly_balance": ticker.quarterly_balance_sheet,
+            "quarterly_cashflow": ticker.quarterly_cashflow,
+        }
+    except Exception:
+        return {}
+
+
+@st.cache_data(ttl=300)
+def get_news(symbol: str):
+    if not HAS_MARKET_LIBS:
+        return []
+    try:
+        ticker = yf.Ticker(symbol)
+        news = ticker.news
+        return news if news else []
+    except Exception:
+        return []
+
+
+def format_number(num):
+    if num is None or (isinstance(num, float) and pd.isna(num)):
+        return "N/A"
+    try:
+        num = float(num)
+        if abs(num) >= 1e7:
+            return f"₹{num/1e7:.2f} Cr"
+        elif abs(num) >= 1e5:
+            return f"₹{num/1e5:.2f} L"
+        elif abs(num) >= 1e3:
+            return f"₹{num/1e3:.2f} K"
+        else:
+            return f"₹{num:.2f}"
+    except Exception:
+        return str(num)
+
+
+def format_pct(val):
+    if val is None or (isinstance(val, float) and pd.isna(val)):
+        return "N/A"
+    try:
+        return f"{float(val)*100:.2f}%" if abs(float(val)) < 10 else f"{float(val):.2f}%"
+    except Exception:
+        return "N/A"
+
+
+def create_candlestick_chart(hist: pd.DataFrame, symbol: str):
+    if hist.empty or not HAS_MARKET_LIBS:
+        return None
+    fig = make_subplots(
+        rows=2, cols=1, shared_xaxes=True, vertical_spacing=0.03,
+        row_heights=[0.7, 0.3], subplot_titles=(f"{symbol} Price", "Volume")
+    )
+    fig.add_trace(
+        go.Candlestick(
+            x=hist.index, open=hist["Open"], high=hist["High"],
+            low=hist["Low"], close=hist["Close"], name="Price",
+            increasing_line_color="#26a69a", decreasing_line_color="#ef5350"
+        ), row=1, col=1
+    )
+    colors = ["#26a69a" if c >= o else "#ef5350" for c, o in zip(hist["Close"], hist["Open"])]
+    fig.add_trace(
+        go.Bar(x=hist.index, y=hist["Volume"], name="Volume", marker_color=colors, opacity=0.7),
+        row=2, col=1
+    )
+    fig.update_layout(
+        title=None, xaxis_rangeslider_visible=False, height=600,
+        template="plotly_dark" if get_theme() == "dark" else "plotly_white",
+        showlegend=False, margin=dict(l=40, r=40, t=40, b=40)
+    )
+    fig.update_xaxes(title_text="Date", row=2, col=1)
+    fig.update_yaxes(title_text="Price (₹)", row=1, col=1)
+    fig.update_yaxes(title_text="Volume", row=2, col=1)
+    return fig
+
+
+def create_line_chart(hist: pd.DataFrame, symbol: str):
+    if hist.empty or not HAS_MARKET_LIBS:
+        return None
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(
+        x=hist.index, y=hist["Close"], mode="lines", name="Close",
+        line=dict(color="#1f77b4", width=2),
+        fill="tozeroy", fillcolor="rgba(31, 119, 180, 0.1)"
+    ))
+    fig.update_layout(
+        title=f"{symbol} Closing Price", height=400,
+        template="plotly_dark" if get_theme() == "dark" else "plotly_white",
+        xaxis_title="Date", yaxis_title="Price (₹)",
+        margin=dict(l=40, r=40, t=40, b=40)
+    )
+    return fig
+
+
+def render_indian_stock_dashboard():
+    """Full Yahoo Finance style Indian stock dashboard."""
+    if not HAS_MARKET_LIBS:
+        st.error("Please install `yfinance` and `plotly` to use the Indian Stock Dashboard:\n\n`pip install yfinance plotly`")
+        return
+
+    st.markdown("## 🇮🇳 Indian Stock Market Dashboard")
+    st.caption("Yahoo Finance style data for NSE & BSE stocks  •  Data via yfinance")
+
+    # ---- Controls ----
+    c1, c2, c3 = st.columns([2, 2, 1])
+    with c1:
+        selection_mode = st.radio("Select", ["Popular Stocks", "Search by Symbol"], horizontal=True, key="ind_sel_mode")
+    with c2:
+        if selection_mode == "Popular Stocks":
+            selected_name = st.selectbox("Stock / Index", list(POPULAR_STOCKS.keys()), key="ind_popular")
+            symbol = POPULAR_STOCKS[selected_name]
+        else:
+            user_input = st.text_input("Symbol (e.g. RELIANCE.NS)", value="RELIANCE.NS", key="ind_symbol").strip().upper()
+            if user_input and not user_input.startswith("^") and "." not in user_input:
+                user_input = user_input + ".NS"
+            symbol = user_input
+    with c3:
+        period = st.selectbox("Period", ["1d", "5d", "1mo", "3mo", "6mo", "1y", "2y", "5y", "max"], index=5, key="ind_period")
+
+    interval_map = {
+        "1d": "5m", "5d": "15m", "1mo": "1h", "3mo": "1d", "6mo": "1d",
+        "1y": "1d", "2y": "1d", "5y": "1wk", "max": "1mo"
+    }
+    interval = interval_map.get(period, "1d")
+
+    if not symbol:
+        st.warning("Enter a valid symbol.")
+        return
+
+    with st.spinner(f"Loading {symbol}..."):
+        info = get_ticker_info(symbol)
+        hist = get_history(symbol, period=period, interval=interval)
+
+    if not info and hist.empty:
+        st.error(f"Could not fetch data for **{symbol}**. Try adding `.NS` (NSE) or `.BO` (BSE).")
+        return
+
+    # ---- Header ----
+    name = info.get("shortName") or info.get("longName") or symbol
+    sector = info.get("sector") or info.get("sectorDisp") or "—"
+    industry = info.get("industry") or info.get("industryDisp") or "—"
+
+    h1, h2, h3 = st.columns([3, 1, 1])
+    with h1:
+        st.subheader(name)
+        st.caption(f"{symbol}  •  {sector}  •  {industry}")
+    with h2:
+        price = info.get("currentPrice") or info.get("regularMarketPrice")
+        prev = info.get("previousClose")
+        if price and prev:
+            change = price - prev
+            pct = (change / prev) * 100
+            st.metric("Price", f"₹{price:,.2f}", f"{change:+.2f} ({pct:+.2f}%)")
+        elif price:
+            st.metric("Price", f"₹{price:,.2f}")
+        else:
+            st.metric("Price", "N/A")
+    with h3:
+        if not hist.empty:
+            st.metric("Volume", f"{hist['Volume'].iloc[-1]:,.0f}")
+
+    st.markdown("---")
+
+    # ---- Key metrics ----
+    m1, m2, m3, m4, m5, m6 = st.columns(6)
+    m1.metric("Open", f"₹{info.get('open') or info.get('regularMarketOpen') or 'N/A'}")
+    m2.metric("Day High", f"₹{info.get('dayHigh') or info.get('regularMarketDayHigh') or 'N/A'}")
+    m3.metric("Day Low", f"₹{info.get('dayLow') or info.get('regularMarketDayLow') or 'N/A'}")
+    m4.metric("52W High", f"₹{info.get('fiftyTwoWeekHigh') or 'N/A'}")
+    m5.metric("52W Low", f"₹{info.get('fiftyTwoWeekLow') or 'N/A'}")
+    pe = info.get("trailingPE")
+    m6.metric("P/E (TTM)", f"{pe:.2f}" if pe else "N/A")
+
+    m7, m8, m9, m10, m11, m12 = st.columns(6)
+    mcap = info.get("marketCap")
+    m7.metric("Market Cap", format_number(mcap) if mcap else "N/A")
+    m8.metric("Div Yield", format_pct(info.get("dividendYield")))
+    m9.metric("Beta", f"{info.get('beta'):.2f}" if info.get("beta") else "N/A")
+    m10.metric("EPS (TTM)", f"₹{info.get('trailingEps'):.2f}" if info.get("trailingEps") else "N/A")
+    m11.metric("Book Value", f"₹{info.get('bookValue'):.2f}" if info.get("bookValue") else "N/A")
+    m12.metric("ROE", format_pct(info.get("returnOnEquity")))
+
+    st.markdown("---")
+
+    # ---- Tabs ----
+    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+        "📊 Chart", "📋 Summary", "💰 Financials", "📰 News", "📈 Statistics", "ℹ️ About"
+    ])
+
+    with tab1:
+        st.subheader("Price Chart")
+        chart_type = st.radio("Chart Type", ["Candlestick", "Line"], horizontal=True, key="ind_chart_type")
+        if not hist.empty:
+            fig = create_candlestick_chart(hist, symbol) if chart_type == "Candlestick" else create_line_chart(hist, symbol)
+            if fig:
+                st.plotly_chart(fig, use_container_width=True)
+            with st.expander("Recent OHLC Data"):
+                display_hist = hist.tail(30).copy()
+                display_hist.index = display_hist.index.strftime("%Y-%m-%d %H:%M")
+                st.dataframe(
+                    display_hist[["Open", "High", "Low", "Close", "Volume"]].style.format({
+                        "Open": "₹{:.2f}", "High": "₹{:.2f}", "Low": "₹{:.2f}",
+                        "Close": "₹{:.2f}", "Volume": "{:,.0f}"
+                    }),
+                    use_container_width=True
+                )
+        else:
+            st.warning("No historical data for this period.")
+
+    with tab2:
+        st.subheader("Company Summary")
+        summary = info.get("longBusinessSummary")
+        if summary:
+            st.write(summary)
+        else:
+            st.info("Business summary not available.")
+        st.markdown("### Key Details")
+        details = {
+            "Symbol": symbol,
+            "Exchange": info.get("exchange") or info.get("fullExchangeName") or "—",
+            "Currency": info.get("currency") or "INR",
+            "Country": info.get("country") or "India",
+            "Website": info.get("website") or "—",
+            "Employees": f"{info.get('fullTimeEmployees'):,}" if info.get("fullTimeEmployees") else "—",
+            "Industry": industry,
+            "Sector": sector,
+        }
+        for k, v in details.items():
+            st.write(f"**{k}:** {v}")
+
+    with tab3:
+        st.subheader("Financial Statements")
+        fin = get_financials(symbol)
+        if not any(v is not None and not (isinstance(v, pd.DataFrame) and v.empty) for v in fin.values()):
+            st.info("Financial statements not available (common for indices).")
+        else:
+            fin_type = st.radio("Statement", ["Income Statement", "Balance Sheet", "Cash Flow"], horizontal=True, key="ind_fin_type")
+            period_type = st.radio("Period", ["Annual", "Quarterly"], horizontal=True, key="ind_fin_period")
+            key_map = {
+                ("Income Statement", "Annual"): "income",
+                ("Income Statement", "Quarterly"): "quarterly_income",
+                ("Balance Sheet", "Annual"): "balance",
+                ("Balance Sheet", "Quarterly"): "quarterly_balance",
+                ("Cash Flow", "Annual"): "cashflow",
+                ("Cash Flow", "Quarterly"): "quarterly_cashflow",
+            }
+            df = fin.get(key_map[(fin_type, period_type)])
+            if df is not None and not df.empty:
+                display_df = df.copy()
+                display_df.columns = [c.strftime("%Y-%m-%d") if hasattr(c, "strftime") else str(c) for c in display_df.columns]
+                st.dataframe(display_df.style.format("{:,.0f}"), use_container_width=True, height=500)
+            else:
+                st.info(f"No {period_type.lower()} {fin_type.lower()} data available.")
+
+    with tab4:
+        st.subheader("Latest News")
+        news_list = get_news(symbol)
+        if news_list:
+            for item in news_list[:12]:
+                content = item.get("content") or item
+                title = content.get("title") or item.get("title") or "No title"
+                publisher = (
+                    content.get("provider", {}).get("displayName")
+                    if isinstance(content.get("provider"), dict)
+                    else (item.get("publisher") or "Unknown")
+                )
+                link = (
+                    content.get("canonicalUrl", {}).get("url")
+                    if isinstance(content.get("canonicalUrl"), dict)
+                    else (item.get("link") or "#")
+                )
+                pub_date = content.get("pubDate") or item.get("providerPublishTime")
+                if pub_date:
+                    try:
+                        if isinstance(pub_date, (int, float)):
+                            pub_date = datetime.fromtimestamp(pub_date).strftime("%Y-%m-%d %H:%M")
+                        else:
+                            pub_date = str(pub_date)[:16]
+                    except Exception:
+                        pub_date = ""
+                st.markdown(f"**[{title}]({link})**")
+                st.caption(f"{publisher}  •  {pub_date}")
+                st.markdown("---")
+        else:
+            st.info("No recent news found.")
+
+    with tab5:
+        st.subheader("Valuation & Statistics")
+        col_a, col_b = st.columns(2)
+        with col_a:
+            st.markdown("#### Valuation Measures")
+            val_data = {
+                "Market Cap": format_number(info.get("marketCap")),
+                "Enterprise Value": format_number(info.get("enterpriseValue")),
+                "Trailing P/E": f"{info.get('trailingPE'):.2f}" if info.get("trailingPE") else "N/A",
+                "Forward P/E": f"{info.get('forwardPE'):.2f}" if info.get("forwardPE") else "N/A",
+                "PEG Ratio": f"{info.get('pegRatio'):.2f}" if info.get("pegRatio") else "N/A",
+                "Price/Sales (TTM)": f"{info.get('priceToSalesTrailing12Months'):.2f}" if info.get("priceToSalesTrailing12Months") else "N/A",
+                "Price/Book": f"{info.get('priceToBook'):.2f}" if info.get("priceToBook") else "N/A",
+                "EV/Revenue": f"{info.get('enterpriseToRevenue'):.2f}" if info.get("enterpriseToRevenue") else "N/A",
+                "EV/EBITDA": f"{info.get('enterpriseToEbitda'):.2f}" if info.get("enterpriseToEbitda") else "N/A",
+            }
+            for k, v in val_data.items():
+                st.write(f"**{k}:** {v}")
+        with col_b:
+            st.markdown("#### Financial Highlights")
+            fin_data = {
+                "Profit Margin": format_pct(info.get("profitMargins")),
+                "Operating Margin": format_pct(info.get("operatingMargins")),
+                "Return on Assets": format_pct(info.get("returnOnAssets")),
+                "Return on Equity": format_pct(info.get("returnOnEquity")),
+                "Revenue (TTM)": format_number(info.get("totalRevenue")),
+                "Revenue Per Share": f"₹{info.get('revenuePerShare'):.2f}" if info.get("revenuePerShare") else "N/A",
+                "Gross Profit": format_number(info.get("grossProfits")),
+                "EBITDA": format_number(info.get("ebitda")),
+                "Net Income": format_number(info.get("netIncomeToCommon")),
+                "Diluted EPS": f"₹{info.get('trailingEps'):.2f}" if info.get("trailingEps") else "N/A",
+            }
+            for k, v in fin_data.items():
+                st.write(f"**{k}:** {v}")
+
+        st.markdown("---")
+        col_c, col_d = st.columns(2)
+        with col_c:
+            st.markdown("#### Trading Information")
+            trade_data = {
+                "Beta (5Y)": f"{info.get('beta'):.2f}" if info.get("beta") else "N/A",
+                "52-Week Change": format_pct(info.get("52WeekChange")),
+                "Avg Volume (10d)": f"{info.get('averageVolume10days'):,.0f}" if info.get("averageVolume10days") else "N/A",
+                "Avg Volume (3m)": f"{info.get('averageVolume'):,.0f}" if info.get("averageVolume") else "N/A",
+                "Shares Outstanding": f"{info.get('sharesOutstanding'):,.0f}" if info.get("sharesOutstanding") else "N/A",
+                "Float Shares": f"{info.get('floatShares'):,.0f}" if info.get("floatShares") else "N/A",
+                "% Held by Insiders": format_pct(info.get("heldPercentInsiders")),
+                "% Held by Institutions": format_pct(info.get("heldPercentInstitutions")),
+            }
+            for k, v in trade_data.items():
+                st.write(f"**{k}:** {v}")
+        with col_d:
+            st.markdown("#### Dividends & Splits")
+            div_data = {
+                "Forward Dividend & Yield": (
+                    f"₹{info.get('dividendRate'):.2f} ({format_pct(info.get('dividendYield'))})"
+                    if info.get("dividendRate") else "N/A"
+                ),
+                "Trailing Annual Dividend": f"₹{info.get('trailingAnnualDividendRate'):.2f}" if info.get("trailingAnnualDividendRate") else "N/A",
+                "Ex-Dividend Date": str(info.get("exDividendDate"))[:10] if info.get("exDividendDate") else "N/A",
+                "Payout Ratio": format_pct(info.get("payoutRatio")),
+                "5 Year Avg Dividend Yield": format_pct(info.get("fiveYearAvgDividendYield")),
+                "Last Split Factor": info.get("lastSplitFactor") or "N/A",
+                "Last Split Date": str(info.get("lastSplitDate"))[:10] if info.get("lastSplitDate") else "N/A",
+            }
+            for k, v in div_data.items():
+                st.write(f"**{k}:** {v}")
+
+    with tab6:
+        st.subheader("About Indian Stock Dashboard")
+        st.markdown("""
+        Full **Yahoo Finance style** dashboard for **Indian stocks** (NSE & BSE).
+
+        **Features:** Quotes, interactive charts, company profile, financial statements,
+        news, valuation ratios, dividends & more.
+
+        **Symbols:**
+        - NSE → `RELIANCE.NS`, `TCS.NS`
+        - BSE → `RELIANCE.BO`
+        - Indices → `^NSEI` (Nifty 50), `^BSESN` (Sensex), `^NSEBANK`
+
+        Data source: Yahoo Finance via `yfinance`. Not financial advice.
+        """)
+        st.caption(f"Last refreshed: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} IST")
 
 
 # ---------------------------------------------------------------------------
@@ -117,6 +587,7 @@ mode = st.sidebar.radio(
         "🧪 Template Builder (huge combo space)",
         "📋 Use a template",
         "📄 Paste / upload a script",
+        "📈 Indian Stock Dashboard",   # ← NEW
         "📊 Live Market Heatmap",
         "ℹ️ About",
     ],
@@ -136,10 +607,14 @@ if mode == "✨ Describe my strategy (AI)":
         "Prefer not to paste a key here? Set the `ANTHROPIC_API_KEY` environment "
         "variable on the machine/host running this app instead."
     )
+else:
+    api_key = None
 
 st.sidebar.divider()
-st.sidebar.caption("PineSprout only ever operates on the script text you provide — "
-                    "it never fetches or bypasses protected/invite-only TradingView scripts.")
+st.sidebar.caption(
+    "PineSprout only ever operates on the script text you provide — "
+    "it never fetches or bypasses protected/invite-only TradingView scripts."
+)
 
 # ---------------------------------------------------------------------------
 # Main area: acquisition mode
@@ -150,9 +625,18 @@ st.caption(
     "Click the **»** arrow at the top-left of the page to expand it — "
     "your browser remembers this setting across visits."
 )
-render_ticker_banner(DEFAULT_SYMBOLS, theme=get_theme())
+if HAS_PINESPROUT:
+    render_ticker_banner(DEFAULT_SYMBOLS, theme=get_theme())
+
+# ========== NEW: Indian Stock Dashboard mode ==========
+if mode == "📈 Indian Stock Dashboard":
+    render_indian_stock_dashboard()
+    st.stop()
 
 if mode == "✨ Describe my strategy (AI)":
+    if not HAS_PINESPROUT:
+        st.error("PineSprout package not installed. AI generation is unavailable.")
+        st.stop()
     st.subheader("Describe your strategy in plain English")
     st.caption(
         "Example: *\"A daily pivot-point strategy that goes long when price reclaims "
@@ -162,7 +646,7 @@ if mode == "✨ Describe my strategy (AI)":
     with st.expander("🔑 Anthropic API Key (required for this mode)", expanded=not api_key):
         main_api_key = st.text_input(
             "ANTHROPIC_API_KEY",
-            value=api_key,
+            value=api_key or "",
             type="password",
             help="Get one at console.anthropic.com. Never stored -- only held in this "
                  "browser session. You can also set the ANTHROPIC_API_KEY environment "
@@ -206,6 +690,9 @@ if mode == "✨ Describe my strategy (AI)":
                     st.error(str(exc))
 
 elif mode == "🧪 Template Builder (huge combo space)":
+    if not HAS_PINESPROUT:
+        st.error("PineSprout package not installed. Template Builder is unavailable.")
+        st.stop()
     st.subheader("Build a custom indicator or strategy")
     counts = estimate_combination_count()
     st.caption(
@@ -299,6 +786,9 @@ elif mode == "🧪 Template Builder (huge combo space)":
         st.success("Built! Scroll down to lint, format, analyze, or download it.")
 
 elif mode == "📋 Use a template":
+    if not HAS_PINESPROUT:
+        st.error("PineSprout package not installed. Templates are unavailable.")
+        st.stop()
     st.subheader("Pick a ready-made template")
     kind_label = st.selectbox("Template", list(TEMPLATE_LABELS.values()))
     kind = next(k for k, v in TEMPLATE_LABELS.items() if v == kind_label)
@@ -363,6 +853,10 @@ else:  # ℹ️ About
 # ---------------------------------------------------------------------------
 # Workbench: once we have source, show the full PineSprout toolchain
 # ---------------------------------------------------------------------------
+if not HAS_PINESPROUT:
+    st.info("PineSprout package not installed — script workbench disabled. Use Indian Stock Dashboard mode.")
+    st.stop()
+
 source = st.session_state.pine_source
 
 if not source.strip():
@@ -533,4 +1027,4 @@ with tab_docs:
 st.divider()
 st.caption("Built with PineSprout — the deterministic core (parse/format/lint/analyze) "
            "runs fully offline; only the '✨ Describe my strategy' mode calls the Anthropic API.")
-st.caption("Live ticker & heatmap tools by **Khushal Jain**.")
+st.caption("Live ticker & heatmap tools by **Khushal Jain**. Indian Stock Dashboard integrated.")
