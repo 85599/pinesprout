@@ -82,7 +82,7 @@ def test_heatmap_mode_renders_without_exceptions():
     _mode_radio(at).set_value("📊 Live Market Heatmap").run(timeout=30)
     assert not at.exception
     select_labels = [sb.label for sb in at.selectbox]
-    assert "Index / universe" in select_labels
+    assert "Index" in select_labels
 
 
 def test_heatmap_mode_supports_india_exchange():
