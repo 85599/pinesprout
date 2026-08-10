@@ -90,7 +90,10 @@ def test_heatmap_mode_supports_india_exchange():
     at.run(timeout=30)
     _mode_radio(at).set_value("📊 Live Market Heatmap").run(timeout=30)
     market_mode_radio = next(r for r in at.radio if "Pick exchanges" in " ".join(r.options))
-    market_mode_radio.set_value("Pick exchanges (India, Europe, Asia-Pacific, ...)").run(timeout=30)
+    
+    # ✅ FIXED LINE: Passing exact option string "Pick exchanges"
+    market_mode_radio.set_value("Pick exchanges").run(timeout=30)
+    
     assert not at.exception
     region_select = next(sb for sb in at.selectbox if sb.label == "Region")
     assert "🇮🇳 India" in region_select.options
