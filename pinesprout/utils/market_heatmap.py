@@ -216,8 +216,8 @@ def _render_html(html: str, height: int) -> None:
 def render_tradingview_heatmap(theme: str = "dark", key_prefix: str = "kj_heatmap") -> None:
     st.subheader("🌍 TradingView Global Heatmap")
     st.info(
-        "**India (NSE/BSE) ke liye upar wala Nifty 50 tab use karo.** "
-        "TradingView free widget India exchanges pe aksar blank aata hai — yeh unki limitation hai."
+        "**Use the Nifty 50 option above for India (NSE/BSE).** "
+        "The free TradingView widget often appears blank for Indian exchanges—this is a limitation on their end."
     )
 
     market_mode = st.radio(
