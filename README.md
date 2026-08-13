@@ -11,7 +11,7 @@ single, fast CLI.
 > TradingView's invite-only or protected scripts.
 
 [![CI](https://github.com/85599/pinesprout/actions/workflows/ci.yml/badge.svg)](https://github.com/85599/pinesprout/actions/workflows/ci.yml)
-[![PyPI](https://img.shields.io/pypi/v/pinesprout.svg)](https://pypi.org/project/pinesprout/)
+[![PyPI](https://img.shields.io/pypi/v/pinesprout?color=green)](https://pypi.org/project/pinesprout/)
 [![Python](https://img.shields.io/badge/python-3.12%2B-blue)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
