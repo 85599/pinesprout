@@ -118,8 +118,7 @@ if HAS_PINESPROUT:
         TemplateKind.EMA_CROSS_STRATEGY: "💰 EMA Crossover Strategy",
         TemplateKind.RSI_STRATEGY: "💰 RSI Mean-Reversion Strategy",
         TemplateKind.BLANK_INDICATOR: "⬜ Blank Indicator Scaffold",
-        TemplateKind.BLANK_STRATEGY: "⬜ Blank Strategy Scaffold",
-        TemplateKind.RSI_CANDLESTICKS: "rsi_with_candlesticks.pine.j2",
+        TemplateKind.BLANK_STRATEGY: "⬜ Blank Strategy Scaffold",        
     }
     SEVERITY_ICON = {Severity.ERROR: "🔴", Severity.WARNING: "🟡", Severity.INFO: "🔵"}
 else:
