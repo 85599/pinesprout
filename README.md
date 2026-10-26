@@ -14,6 +14,7 @@ single, fast CLI.
 [![PyPI](https://img.shields.io/pypi/v/pinesprout?color=green)](https://pypi.org/project/pinesprout/)
 [![Python](https://img.shields.io/badge/python-3.12%2B-blue)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+> 📖 Why a hand-rolled parser, and how the lint rules work: [dev.to write-up](https://dev.to/khushaljain023/there-is-no-official-grammar-for-pine-script-so-i-wrote-a-small-one-3eh3)
 
 ---
 
